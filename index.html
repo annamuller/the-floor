@@ -410,11 +410,11 @@ function dial(){
   conn.on("close",()=>{if(hostConn===conn){hostConn=null;scheduleRedial(1500)}});
   conn.on("error",()=>{});
   clearTimeout(dialT);
-  dialT=setTimeout(()=>{if(hostConn===conn&&!conn.open){hostConn=null;try{conn.close()}catch(e){}scheduleRedial(500)}},10000);
+  dialT=setTimeout(()=>{if(hostConn===conn&&!conn.open){hostConn=null;try{conn.close()}catch(e){}scheduleRedial(500)}},20000);
 }
 function scheduleRedial(ms){
   if(!code||isHost) return; clearTimeout(retryT); dialFails++;
-  if(R||!ui.fresh){ui.msg=dialFails>8?"Can’t reach the host. Make sure the host’s screen is on and the page is open.":"Reconnecting to the host…";ui.net=true;render()}
+  if(R||!ui.fresh||dialFails>=2){ui.msg=!R&&dialFails>=2&&dialFails<=8?"Taking longer than usual. Some Wi-Fi networks block games like this. Try switching to mobile data.":dialFails>8?"Can’t reach the host. Make sure the host’s screen is on and the page is open.":"Reconnecting to the host…";ui.net=true;render()}
   retryT=setTimeout(()=>{if(!code||isHost)return;if(peer&&peer.open)dial();else if(peer&&!peer.destroyed&&peer.disconnected){try{peer.reconnect()}catch(e){}}},ms);
 }
 function playerMsg(conn,m){
