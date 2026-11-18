@@ -1,0 +1,852 @@
+<title>The Floor Party Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Manrope:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: a game-show stage that works on a phone in your hand and on a TV. 4x4 LED floor, standings rail, duels take over the screen. Single dark look by choice. */
+:root{
+  --bg:#080a13;
+  --panel:#11142a;
+  --line:#252a48;
+  --fg:#eef0ff;
+  --muted:#8e94bd;
+  --accent:#ffe14d;
+  --good:#3ddc84;
+  --warn:#ff9f43;
+  --danger:#ff4d6d;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;
+  background-image:radial-gradient(ellipse at 50% -10%,#1b2150 0%,transparent 60%);background-attachment:fixed}
+#app{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 32px;max-width:1240px;margin:0 auto}
+button{font:inherit;color:inherit}
+input,select{font:inherit;color:var(--fg);background:#0b0e1f;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{text-wrap:balance;margin:0}
+h2{font-family:var(--display);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.02em}
+h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+p{margin:0}
+.hint{color:var(--muted);font-size:14px}
+.msg{min-height:1.4em;color:var(--warn);font-weight:700}
+
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 16px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn:hover:not(:disabled){border-color:var(--muted)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:#14110a;border-color:var(--accent)}
+.btn.big{font-size:18px;padding:14px 22px;border-radius:14px}
+.btn.ghost{background:transparent}
+.btn.small{padding:6px 10px;font-size:13px;border-radius:9px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.brand{font-family:var(--display);font-weight:900;font-size:32px;letter-spacing:.04em;line-height:1;text-transform:uppercase}
+.brand span{font-weight:600;font-size:14px;letter-spacing:.2em;color:var(--accent);margin-left:8px;vertical-align:middle}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.codechip{font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.18em;background:#ffe14d1a;color:var(--accent);border:1px solid #ffe14d55;border-radius:10px;padding:4px 12px}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.home{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:880px;margin:0 auto}
+.home .wide{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
+.codeinput{font-family:var(--display);font-weight:900;font-size:34px;letter-spacing:.3em;text-transform:uppercase;text-align:center}
+.check{display:flex;gap:10px;align-items:center;font-weight:600}
+.steps{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--muted)}
+.steps b{color:var(--fg)}
+.fatal{max-width:560px;margin:40px auto;text-align:center}
+
+/* lobby */
+.lobby{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px;align-items:start}
+.bigcode{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.bigcode .c{font-family:var(--display);font-weight:900;font-size:clamp(64px,12vw,120px);line-height:.9;letter-spacing:.14em;color:var(--accent)}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.plist li{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:#ffffff06}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--pc);box-shadow:0 0 10px var(--pc)}
+.plist .n{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plist .n small{font-weight:600;color:var(--muted);margin-left:6px}
+.settings{display:flex;gap:12px;flex-wrap:wrap}
+.settings label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.cgroup{display:flex;flex-direction:column;gap:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:#0b0e1f;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--accent);color:#14110a;border-color:var(--accent)}
+.chip .rk{font-family:var(--display);font-weight:900;font-size:15px}
+.chip.taken{opacity:.45}
+
+/* board */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+.boardwrap{display:flex;flex-direction:column;gap:14px;min-width:0}
+.status{font-family:var(--display);font-weight:800;font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:.02em;line-height:1.1;min-height:2.2em}
+.status b{color:var(--pc,var(--accent))}
+.board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:7px;width:100%;max-width:640px;aspect-ratio:1;padding:9px;border-radius:18px;
+  background:#05060d;box-shadow:inset 0 0 0 1px var(--line),0 30px 80px -30px #000}
+.tile{position:relative;border:0;border-radius:10px;background:color-mix(in oklab,var(--pc) 17%,#0b0e1d);box-shadow:inset 0 0 0 2px color-mix(in oklab,var(--pc) 65%,transparent);
+  display:flex;flex-direction:column;justify-content:space-between;gap:3px;padding:clamp(5px,1.2vw,12px);min-width:0;overflow:hidden;text-align:left;cursor:default;transition:transform .15s,opacity .15s,box-shadow .15s,background .15s}
+.tile .meta{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.tile .who{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:clamp(14px,3.4vw,30px);line-height:.92;color:var(--pc);overflow-wrap:anywhere}
+.tile .cat{font-size:clamp(9px,1.5vw,13px);font-weight:700;line-height:1.15;overflow-wrap:anywhere}
+.tile.empty{background:repeating-linear-gradient(45deg,#0a0c17 0 7px,#0d1020 7px 14px);box-shadow:inset 0 0 0 1px #1a1e36}
+.tile.mine{box-shadow:inset 0 0 0 3px var(--pc),0 0 26px color-mix(in oklab,var(--pc) 55%,transparent);background:color-mix(in oklab,var(--pc) 30%,#0b0e1d)}
+.tile.target{cursor:pointer;animation:pulse 1.1s ease-in-out infinite}
+.tile.target:hover{transform:scale(1.03)}
+.tile.dim{opacity:.28}
+.tile.lit{background:color-mix(in oklab,var(--pc) 55%,#0b0e1d);box-shadow:inset 0 0 0 3px #fff,0 0 34px var(--pc);opacity:1}
+.tile.lit .who{color:#fff}
+@keyframes pulse{0%,100%{box-shadow:inset 0 0 0 2px color-mix(in oklab,var(--pc) 65%,transparent)}50%{box-shadow:inset 0 0 0 4px #fff,0 0 26px #ffffff70}}
+.ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.side{display:flex;flex-direction:column;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+.stand,.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.stand li{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 8px;border-radius:8px}
+.stand li.pickable{cursor:pointer}
+.stand li.pickable:hover{background:#ffffff0a}
+.stand li.out{opacity:.35;text-decoration:line-through}
+.stand li.now{background:color-mix(in oklab,var(--pc) 22%,transparent)}
+.stand .dot{width:12px;height:12px}
+.stand .n{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stand .c{font-family:var(--display);font-weight:800;font-size:22px;font-variant-numeric:tabular-nums}
+.log li{font-size:13px;color:var(--muted)}
+.log li b{color:var(--fg)}
+.log li .w{color:var(--pc);font-weight:800}
+.over{background:var(--panel);border:1px solid var(--accent);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.over .big{font-family:var(--display);font-weight:900;font-size:clamp(34px,6vw,64px);line-height:.95;text-transform:uppercase;color:var(--pc)}
+
+/* duel */
+.duel{position:fixed;inset:0;z-index:50;background:var(--bg);background-image:radial-gradient(ellipse at 50% 0%,#20275c 0%,transparent 65%);overflow:auto;
+  padding:max(14px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(14px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;gap:12px}
+.dinner{width:100%;max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:12px;flex:1}
+.dhead{text-align:center}
+.dhead .eyebrow{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.dhead h1{font-family:var(--display);font-weight:900;font-size:clamp(30px,6vw,64px);line-height:.95;text-transform:uppercase;color:var(--accent)}
+.clocks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.pl{border-radius:16px;padding:12px;background:color-mix(in oklab,var(--pc) 10%,var(--panel));box-shadow:inset 0 0 0 2px color-mix(in oklab,var(--pc) 35%,transparent);text-align:center;opacity:.5;transition:opacity .2s,box-shadow .2s;min-width:0}
+.pl.on{opacity:1;box-shadow:inset 0 0 0 3px var(--pc),0 0 40px color-mix(in oklab,var(--pc) 45%,transparent)}
+.pl .role{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.pl .nm{font-family:var(--display);font-weight:900;font-size:clamp(20px,3vw,34px);text-transform:uppercase;color:var(--pc);line-height:1;overflow-wrap:anywhere}
+.pl .clk{font-family:var(--display);font-weight:800;font-size:clamp(46px,9vw,110px);line-height:1;font-variant-numeric:tabular-nums}
+.pl .clk.low{color:var(--danger)}
+.screen{position:relative;min-height:clamp(150px,30vh,320px);border-radius:16px;background:#000;box-shadow:inset 0 0 0 1px var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;padding:20px}
+.screen .clue{font-weight:800;font-size:clamp(24px,4.2vw,50px);line-height:1.15;text-align:center;text-wrap:balance;overflow-wrap:anywhere}
+.screen .clue.emoji{font-size:clamp(100px,18vw,220px);line-height:1}
+.screen .count{font-family:var(--display);font-weight:900;font-size:clamp(90px,16vw,200px);color:var(--accent)}
+.screen .say{font-family:var(--display);font-weight:800;font-size:clamp(24px,4vw,46px);text-transform:uppercase;text-align:center;line-height:1}
+.screen .say small{display:block;font-family:var(--body);font-size:15px;text-transform:none;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.4}
+.feedback{text-align:center;min-height:1.6em;font-weight:800;font-size:18px}
+.feedback.ok{color:var(--good)}
+.feedback.bad{color:var(--warn)}
+.answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.opt{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:16px 12px;font-weight:800;font-size:clamp(16px,2.4vw,22px);cursor:pointer;min-height:64px;overflow-wrap:anywhere}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:active:not(:disabled){transform:scale(.98)}
+.opt:disabled{opacity:.45;cursor:default}
+.passrow{display:flex;justify-content:center}
+.waiting{text-align:center;color:var(--muted);font-weight:700;font-size:17px;padding:10px}
+.dres{position:fixed;inset:0;z-index:60;background:#080a13ee;display:flex;align-items:center;justify-content:center;padding:20px}
+.dres .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:28px;max-width:560px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center}
+.dres .w{font-family:var(--display);font-weight:900;font-size:clamp(44px,8vw,88px);line-height:.9;text-transform:uppercase;color:var(--pc)}
+
+@media (max-width:900px){
+  .lobby,.stage,.home{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .tile .meta{display:none}
+  .brand{font-size:26px}
+}
+@media (prefers-reduced-motion:reduce){
+  .tile.target{animation:none;box-shadow:inset 0 0 0 4px #fff}
+  *{transition:none!important}
+}
+.invite{display:flex;gap:8px;width:100%;margin-top:6px}
+.invite input{flex:1;min-width:0;font:inherit;font-size:14px;background:#0b0e1e;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+</style>
+
+<div id="app"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const CATS = {
+ "Pop culture": [
+  "Disney Characters",
+  "Harry Potter",
+  "Game of Thrones",
+  "Reality TV",
+  "Famous Movie Quotes",
+  "Famous Catchphrases",
+  "Fictional Towns",
+  "90s & 2000s Cartoons",
+  "Kids' Book Characters",
+  "90s & 2000s Throwbacks",
+  "Social Media Influencers",
+  "Iconic Red Carpet Outfits"
+ ],
+ "Music & dance": [
+  "80s & 90s Music",
+  "Taylor Swift Songs",
+  "Disney & Broadway Songs",
+  "Songs with Colors in the Title",
+  "Bands with Numbers",
+  "Musical Instruments",
+  "Eurovision",
+  "Dance Styles"
+ ],
+ "World": [
+  "World Flags",
+  "World Capitals",
+  "Country Outlines",
+  "African Countries",
+  "Asian Countries",
+  "USA States",
+  "Mountain Ranges",
+  "Airport Codes",
+  "Currency Symbols",
+  "Iconic Buildings & Structures"
+ ],
+ "People & sport": [
+  "World Leaders",
+  "USA Presidents",
+  "Famous Athletes",
+  "Football Players",
+  "NHL Teams",
+  "Tech Founders & CEOs"
+ ],
+ "Finland": [
+  "Finnish Designers",
+  "Finnish Political Symbols & Party Logos",
+  "Finnish National Parks"
+ ],
+ "Tech & games": [
+  "Video Game Consoles",
+  "Retro Tech",
+  "Computer Parts",
+  "Tech Company Logos",
+  "Programming Languages",
+  "Board Games",
+  "Playing Card Games"
+ ],
+ "Art & style": [
+  "Famous Paintings",
+  "Art Styles & Movements",
+  "Designer Handbags",
+  "Shoes & Sneakers",
+  "Craft & Sewing Supplies"
+ ],
+ "Food & home": [
+  "International Dishes",
+  "Types of Pasta",
+  "Kitchen Items",
+  "Bathroom Essentials",
+  "Flowers & Houseplants"
+ ],
+ "Active & outdoors": [
+  "Camping & Outdoor Gear",
+  "Climbing Lingo",
+  "Yoga Poses & Exercises",
+  "Gym Moves"
+ ],
+ "Nature & animals": [
+  "Dog Breeds",
+  "Cat Breeds",
+  "Rocks & Minerals"
+ ]
+};
+const QBANK = {"Disney Characters": [["Disney's mascot, red shorts, big round ears", "Mickey Mouse"], ["Ice queen of Arendelle", "Elsa"], ["Mermaid princess who wants legs", "Ariel"], ["Lion cub, future Pride Rock king", "Simba"], ["Wooden boy whose nose grows when lying", "Pinocchio"], ["Hakuna Matata warthog", "Pumbaa"], ["Glass slipper princess, midnight deadline", "Cinderella"], ["Fairy who sprinkles pixie dust", "Tinker Bell"], ["Sea witch in The Little Mermaid", "Ursula"], ["Aladdin's blue wish-granter, voiced by Robin Williams", "Genie"], ["Mickey's grumpy sailor-suited friend", "Donald Duck"], ["Honey-loving bear of very little brain", "Winnie the Pooh"], ["Frozen snowman who likes warm hugs", "Olaf"], ["Bookworm who falls for the Beast", "Belle"], ["Evil fairy who cursed Sleeping Beauty", "Maleficent"], ["Villain who wants a Dalmatian fur coat", "Cruella de Vil"], ["Forgetful blue tang, 'just keep swimming'", "Dory"], ["Polynesian wayfinder who sails with Maui", "Moana"], ["Chinese warrior disguised as a man", "Mulan"], ["Pixar space ranger toy", "Buzz Lightyear"], ["Pixar cowboy sheriff toy", "Woody"], ["Big-eared flying elephant", "Dumbo"], ["Peter Pan's one-handed pirate nemesis", "Captain Hook"], ["Lion King villain, Mufasa's brother", "Scar"], ["Aladdin's pet monkey", "Abu"]], "Harry Potter": [["Hogwarts headmaster with a long silver beard", "Dumbledore"], ["Potions master revealed as the Half-Blood Prince", "Snape"], ["Half-giant Hogwarts gamekeeper", "Hagrid"], ["Dark Lord, He-Who-Must-Not-Be-Named", "Voldemort"], ["Harry's snowy owl", "Hedwig"], ["Wizard bank run by goblins", "Gringotts"], ["Wizard prison guarded by Dementors", "Azkaban"], ["Village near Hogwarts with the Three Broomsticks", "Hogsmeade"], ["Talking headwear that assigns students to houses", "Sorting Hat"], ["House of the brave, lion emblem", "Gryffindor"], ["House with the serpent emblem", "Slytherin"], ["Run through a King's Cross barrier to reach it", "Platform 9¾"], ["House-elf freed with a sock", "Dobby"], ["Weasley family home", "The Burrow"], ["Deathly Hallow that makes the wearer unseen", "Invisibility Cloak"], ["Parchment showing everyone's location at Hogwarts", "Marauder's Map"], ["Wizard sport played on broomsticks with a Snitch", "Quidditch"], ["Harry's godfather, an Animagus dog", "Sirius Black"], ["Brainy Muggle-born witch, Harry's best friend", "Hermione"], ["Draco's father, a Death Eater", "Lucius Malfoy"], ["Diagon Alley shop where Harry gets his wand", "Ollivanders"], ["Hourglass necklace Hermione uses in year three", "Time-Turner"], ["Voldemort's snake, also a Horcrux", "Nagini"], ["Pink-loving Ministry toad, Defence teacher year five", "Umbridge"], ["Death Eater who killed Sirius", "Bellatrix"]], "Game of Thrones": [["Capital city where the king rules Westeros", "King's Landing"], ["Seat of House Stark", "Winterfell"], ["Huge ice barrier guarded by the Night's Watch", "The Wall"], ["Mother of Dragons, Targaryen queen", "Daenerys"], ["Ned's bastard son who joins the Night's Watch", "Jon Snow"], ["Witty Lannister dwarf, Hand of the Queen", "Tyrion"], ["Cruel boy king poisoned at his wedding", "Joffrey"], ["Ned's youngest daughter, trained by the Faceless Men", "Arya"], ["Lannister queen, twin of Jaime", "Cersei"], ["Sandor Clegane's nickname", "The Hound"], ["Seat forged from a thousand surrendered swords", "Iron Throne"], ["Leader of the White Walkers, killed by Arya", "Night King"], ["Daenerys's largest dragon, black and red", "Drogon"], ["Arya's thin sword, a gift from Jon", "Needle"], ["Free City where Arya trains as an assassin", "Braavos"], ["Greyjoy homeland of raiders and krakens", "Iron Islands"], ["Frey feast where Robb Stark is massacred", "Red Wedding"], ["Tall female knight from Tarth", "Brienne"], ["Littlefinger's real name", "Petyr Baelish"], ["Ned's paralysed son, becomes the Three-Eyed Raven", "Bran"], ["Gentle giant who says only one word", "Hodor"], ["Red Priestess serving the Lord of Light", "Melisandre"], ["Eunuch spymaster called the Spider", "Varys"], ["Green explosive used at the Battle of Blackwater", "Wildfire"], ["Jon's white, silent direwolf", "Ghost"]], "Reality TV": [["Castaways vote each other off the island", "Survivor"], ["Housemates filmed 24/7, weekly evictions", "Big Brother"], ["Singles couple up in a Mallorca villa", "Love Island"], ["Queens lip sync for their lives, sashay away", "RuPaul's Drag Race"], ["Gordon Ramsay's red vs blue brigade cooking contest", "Hell's Kitchen"], ["Amateurs in a tent, Paul Hollywood handshake", "Great British Bake Off"], ["Kim, Khloé and Kourtney's Hulu family show", "The Kardashians"], ["Simon Cowell's singing contest with judges' houses", "The X Factor"], ["Coaches spin their chairs at blind auditions", "The Voice"], ["One man hands out roses to contestants", "The Bachelor"], ["Teams circle the globe chasing a million", "The Amazing Race"], ["Netflix singles get engaged without seeing each other", "Love Is Blind"], ["Netflix singles lose prize money for kissing", "Too Hot to Handle"], ["Paris Hilton and Nicole Richie live on a farm", "The Simple Life"], ["Heidi Klum, Tim Gunn, fashion designer competition", "Project Runway"], ["Tyra Banks' search for a catwalk star", "America's Next Top Model"], ["Snooki and The Situation party on the beach", "Jersey Shore"], ["Entrepreneurs pitch to Mark Cuban and Mr. Wonderful", "Shark Tank"], ["Celebrities sing hidden inside elaborate costumes", "The Masked Singer"], ["Netflix: Oppenheim agents sell LA luxury homes", "Selling Sunset"], ["Ozzy's family reality show on MTV", "The Osbournes"], ["Couples tested by flirty singles in a tropical resort", "Temptation Island"], ["Finnish artists cover each other's hits", "Vain elämää"], ["Finnish strangers meet first time at their wedding", "Ensitreffit alttarilla"], ["Finnish celebrities ballroom dance with pros on MTV3", "Tanssii tähtien kanssa"]], "Famous Movie Quotes": [["May the Force be with you", "Star Wars"], ["Here's looking at you, kid", "Casablanca"], ["You're gonna need a bigger boat", "Jaws"], ["There's no place like home", "The Wizard of Oz"], ["I see dead people", "The Sixth Sense"], ["Why so serious?", "The Dark Knight"], ["To infinity and beyond!", "Toy Story"], ["I'm the king of the world!", "Titanic"], ["Houston, we have a problem", "Apollo 13"], ["Life was like a box of chocolates", "Forrest Gump"], ["You can't handle the truth!", "A Few Good Men"], ["An offer he can't refuse", "The Godfather"], ["Hasta la vista, baby", "Terminator 2"], ["Just keep swimming", "Finding Nemo"], ["Say hello to my little friend!", "Scarface"], ["Wax on, wax off", "The Karate Kid"], ["Nobody puts Baby in a corner", "Dirty Dancing"], ["Show me the money!", "Jerry Maguire"], ["My precious", "The Lord of the Rings"], ["Yippee-ki-yay", "Die Hard"], ["Here's Johnny!", "The Shining"], ["You talkin' to me?", "Taxi Driver"], ["I am Groot", "Guardians of the Galaxy"], ["Wakanda forever!", "Black Panther"], ["Roads? Where we're going, we don't need roads", "Back to the Future"]], "Famous Catchphrases": [["D'oh!", "Homer Simpson"], ["Bazinga!", "Sheldon Cooper"], ["I'll be back.", "The Terminator"], ["To infinity and beyond!", "Buzz Lightyear"], ["Legen... wait for it... dary!", "Barney Stinson"], ["Eat my shorts!", "Bart Simpson"], ["Eh, what's up, Doc?", "Bugs Bunny"], ["Live long and prosper.", "Spock"], ["Say hello to my little friend!", "Tony Montana"], ["Here's Johnny!", "Jack Torrance"], ["I'm the king of the world!", "Jack Dawson"], ["Just keep swimming.", "Dory"], ["You shall not pass!", "Gandalf"], ["My precious...", "Gollum"], ["Pivot! Pivot! Pivot!", "Ross Geller"], ["Why so serious?", "The Joker"], ["I am the one who knocks.", "Walter White"], ["Shaken, not stirred.", "James Bond"], ["Release the hounds!", "Mr. Burns"], ["Hi-diddly-ho, neighborino!", "Ned Flanders"], ["Dracarys.", "Daenerys Targaryen"], ["You know nothing, Jon Snow.", "Ygritte"], ["After all this time? Always.", "Severus Snape"], ["Wubba lubba dub dub!", "Rick Sanchez"], ["Identity theft is not a joke, Jim!", "Dwight Schrute"]], "Fictional Towns": [["The Simpsons: nuclear plant, Moe's Tavern", "Springfield"], ["Stranger Things: Indiana town near the Upside Down", "Hawkins"], ["Gilmore Girls: Luke's Diner, quirky Connecticut town", "Stars Hollow"], ["Harry Potter: wizard village near Hogwarts, Butterbeer", "Hogsmeade"], ["David Lynch series: who killed Laura Palmer?", "Twin Peaks"], ["Jaws: shark terrorizes this New England beach resort", "Amity Island"], ["Back to the Future: lightning-struck clock tower", "Hill Valley"], ["Cartman and Kenny's Colorado mountain town", "South Park"], ["Archie Comics town, Pop's Chock'lit Shoppe", "Riverdale"], ["Moira and Johnny Rose's town, bought as a joke", "Schitt's Creek"], ["The Hobbit: Bilbo's Bag End village", "Hobbiton"], ["Batman: crime-ridden home of the Joker", "Gotham City"], ["Clark Kent grows up on a Kansas farm here", "Smallville"], ["Desperate Housewives: home of Wisteria Lane", "Fairview"], ["Pokémon: where Ash Ketchum grew up", "Pallet Town"], ["Stephen King's It: Pennywise haunts this Maine town", "Derry"], ["Shrek: Lord Farquaad's perfectly tidy kingdom", "Duloc"], ["The Truman Show: Truman's fake island hometown", "Seahaven"], ["Disney cartoon twins Dipper and Mabel's Oregon town", "Gravity Falls"], ["SpongeBob's undersea home", "Bikini Bottom"], ["Tove Jansson: home of Snufkin and Little My", "Moominvalley"], ["The Flintstones' stone-age home", "Bedrock"], ["Dr. Seuss: the Grinch steals Christmas from here", "Whoville"], ["Buffy the Vampire Slayer: town on the Hellmouth", "Sunnydale"], ["Parks and Recreation: Leslie Knope's Indiana town", "Pawnee"]], "90s & 2000s Cartoons": [["Yellow family in Springfield", "The Simpsons"], ["Porous hero living in a pineapple under the sea", "SpongeBob SquarePants"], ["Babies Tommy, Chuckie and Angelica", "Rugrats"], ["Blossom, Bubbles and Buttercup fight crime", "The Powerpuff Girls"], ["Boy genius with a secret basement, sister Dee Dee", "Dexter's Laboratory"], ["Football-headed kid, secretly loved by Helga", "Hey Arnold!"], ["Ash and Pikachu catch them all", "Pokémon"], ["Three scheming boys obsessed with jawbreakers", "Ed, Edd n Eddy"], ["Scared pink pet protects elderly couple in Nowhere, Kansas", "Courage the Cowardly Dog"], ["Conjoined brothers, one feline, one canine", "CatDog"], ["Timmy Turner's magical guardians Cosmo and Wanda", "The Fairly OddParents"], ["Eliza can talk to animals on family safaris", "The Wild Thornberrys"], ["Lab mice plotting to take over the world", "Pinky and the Brain"], ["Yakko, Wakko and Dot in the Warner water tower", "Animaniacs"], ["Pompadoured muscle guy hitting on women", "Johnny Bravo"], ["Beverly Hills girl spy trio Sam, Clover, Alex", "Totally Spies!"], ["Teen hero with sidekick Ron and naked mole-rat Rufus", "Kim Possible"], ["Aang learns to bend all four elements", "Avatar: The Last Airbender"], ["Stepbrothers' summer inventions, Perry the Platypus", "Phineas and Ferb"], ["Playground gang led by T.J. Detweiler", "Recess"], ["Shy diary writer Funnie with dog Porkchop", "Doug"], ["Deadpan MTV teen in Lawndale", "Daria"], ["Pizza delivery boy frozen until the year 3000", "Futurama"], ["Goku powers up to Super Saiyan", "Dragon Ball Z"], ["Usagi Tsukino leads a magical girl team", "Sailor Moon"]], "Kids' Book Characters": [["Super-strong Swedish girl with red braids and a horse", "Pippi Longstocking"], ["Tove Jansson's white, hippo-like hero", "Moomintroll"], ["Tiny, fierce Tove Jansson girl with a topknot", "Little My"], ["Honey-loving bear of the Hundred Acre Wood", "Winnie-the-Pooh"], ["Marmalade-loving bear from Peru in a duffle coat", "Paddington"], ["Monster with knobbly knees and a poisonous wart", "Gruffalo"], ["Eric Carle insect that eats through the week", "Hungry Caterpillar"], ["Beatrix Potter's mischievous bunny in a blue jacket", "Peter Rabbit"], ["Roald Dahl's telekinetic, book-loving girl", "Matilda"], ["Dahl's eccentric chocolate factory owner", "Willy Wonka"], ["Dr. Seuss feline in red-and-white striped headwear", "Cat in the Hat"], ["Dr. Seuss green grump who stole Christmas", "Grinch"], ["Boy wizard with a lightning-bolt scar", "Harry Potter"], ["Brainy Gryffindor witch, best friend of the boy wizard", "Hermione Granger"], ["Red-and-white striped hiker hidden in crowds", "Wally"], ["Girl who fell down a rabbit hole", "Alice"], ["Boy who never grows up, lives in Neverland", "Peter Pan"], ["Boy raised by wolves in The Jungle Book", "Mowgli"], ["Monkey always in trouble with the Man in the Yellow Hat", "Curious George"], ["Elephant king in a green suit", "Babar"], ["Smallest of twelve Paris schoolgirls in two straight lines", "Madeline"], ["Great lion who rules Narnia", "Aslan"], ["Hobbit who joins dwarves to rob Smaug", "Bilbo Baggins"], ["Spider who writes words in her web to save Wilbur", "Charlotte"], ["Wolf-suited boy who sails to where the Wild Things are", "Max"]], "90s & 2000s Throwbacks": [["Bandai's egg-shaped virtual pet keychain", "Tamagotchi"], ["Furry talking owl-hamster toy, 1998 craze", "Furby"], ["Microsoft chat app famous for nudges", "MSN Messenger"], ["Indestructible Finnish phone from 2000, with Snake", "Nokia 3310"], ["Apple's click-wheel music player", "iPod"], ["Japanese battling spinning tops, 'Let it rip!'", "Beyblade"], ["Metal band that curls around your wrist with a smack", "Slap bracelet"], ["Nintendo handheld with green screen, Tetris bundled", "Game Boy"], ["Pikachu collectibles traded in every schoolyard", "Pokémon cards"], ["Ty's beanbag animals with heart-shaped tags", "Beanie Babies"], ["Social network with Top 8 friends and Tom", "MySpace"], ["Cardboard milk caps flipped with a slammer", "Pogs"], ["Sony's portable CD player", "Discman"], ["Arcade game: stomp on arrows to the music", "Dance Dance Revolution"], ["Spiky bleached boy-band hairstyle", "Frosted tips"], ["Velour tracksuit brand worn by Paris Hilton", "Juicy Couture"], ["Tiny fingerboard skateboards", "Tech Deck"], ["Sneakers with a wheel in the heel", "Heelys"], ["QWERTY phone nicknamed the CrackBerry", "BlackBerry"], ["Video rental chain with blue-and-yellow ticket logo", "Blockbuster"], ["Stretchy black plastic coil necklace", "Tattoo choker"], ["Console with three-pronged controller, GoldenEye", "Nintendo 64"], ["Facebook farming game, 2009 craze", "FarmVille"], ["Yellow rubber charity wristband, Lance Armstrong", "Livestrong bracelet"], ["Ultra-thin 2004 flip phone, hot pink edition", "Motorola Razr"]], "Social Media Influencers": [["YouTuber famous for huge-money challenges and giveaways", "MrBeast"], ["TikTok dance star, once the app's most-followed", "Charli D'Amelio"], ["Silent TikToker mocking overcomplicated life hacks", "Khaby Lame"], ["Swedish gamer, 'Bro Fist', long YouTube's top creator", "PewDiePie"], ["Lip kit billionaire, youngest Kardashian half-sister", "Kylie Jenner"], ["TikTok dancer turned pop singer of 'Diet Pepsi'", "Addison Rae"], ["Filipino-American with TikTok's most-liked video, 'Build a B*tch'", "Bella Poarch"], ["Prime drink co-founder turned WWE wrestler", "Logan Paul"], ["YouTuber turned boxer who fought Mike Tyson", "Jake Paul"], ["British YouTuber, Sidemen member and boxer", "KSI"], ["Gen Z vlogger with her own coffee brand", "Emma Chamberlain"], ["Vine and TikTok 'digital magic' illusion videos", "Zach King"], ["'Hi sisters!' beauty YouTuber", "James Charles"], ["Italian fashion blogger behind The Blonde Salad", "Chiara Ferragni"], ["Let's-player whose intro is 'Hello everybody, my name is...'", "Markiplier"], ["Blue-haired Fortnite streamer with a headband", "Ninja"], ["Twitch streamer famous for record subathons and 'Mafiathon'", "Kai Cenat"], ["Hyper streamer who barks and idolises Cristiano Ronaldo", "IShowSpeed"], ["Texan trick-shot crew of friends", "Dude Perfect"], ["Dutch makeup artist behind 'The Power of Makeup'", "NikkieTutorials"], ["NYC daily vlogger riding an electric Boosted board", "Casey Neistat"], ["Venezuelan Vine comedy star", "Lele Pons"], ["Ultra-crisp tech reviews, Marques Brownlee's channel", "MKBHD"], ["Moroccan-Canadian Twitch streamer, OfflineTV member", "Pokimane"], ["UK lifestyle vlogger Zoe Sugg's online name", "Zoella"]], "Iconic Red Carpet Outfits": [["Meat dress, VMAs 2010", "Lady Gaga"], ["Swan dress, Oscars 2001", "Björk"], ["Plunging green Versace jungle dress, Grammys 2000", "Jennifer Lopez"], ["Safety-pin Versace dress, Four Weddings premiere 1994", "Elizabeth Hurley"], ["Yellow fur-trimmed Guo Pei cape, Met Gala 2015", "Rihanna"], ["Black off-shoulder 'revenge dress', Serpentine Gallery 1994", "Princess Diana"], ["Head-to-toe double denim with Justin Timberlake, AMAs 2001", "Britney Spears"], ["Light-up Cinderella gown, Met Gala 2019", "Zendaya"], ["Marilyn Monroe's original birthday dress, Met Gala 2022", "Kim Kardashian"], ["Pink Ralph Lauren gown, Best Actress win, Oscars 1999", "Gwyneth Paltrow"], ["Sheer burgundy Elie Saab, Best Actress win, Oscars 2002", "Halle Berry"], ["Towering feathered Bob Mackie headdress, Oscars 1986", "Cher"], ["Pale 'Nairobi blue' Prada gown, Oscars 2014", "Lupita Nyong'o"], ["Velvet tuxedo ball gown by Christian Siriano, Oscars 2019", "Billy Porter"], ["Tripped on the stairs in Dior, Oscars 2013", "Jennifer Lawrence"], ["Black Versace with that leg pose, Oscars 2012", "Angelina Jolie"], ["Purple one-shoulder jumpsuit with pastie, VMAs 1999", "Lil' Kim"], ["Lit-up chandelier costume, Met Gala 2019", "Katy Perry"], ["Gap turtleneck with a ball skirt, Oscars 1996", "Sharon Stone"], ["Ice-blue Edith Head gown, Best Actress win, 1955", "Grace Kelly"], ["Copper Versace gown turning Statue-of-Liberty green, Met 2022", "Blake Lively"], ["Chartreuse Dior by Galliano, Oscars 1997", "Nicole Kidman"], ["Backwards white Dior tuxedo, Oscars 1999", "Celine Dion"], ["Carried a replica of his own head, Met 2019", "Jared Leto"], ["'Tax the Rich' white gown, Met Gala 2021", "Alexandria Ocasio-Cortez"]], "80s & 90s Music": [["Billie Jean (1983)", "Michael Jackson"], ["Like a Virgin (1984)", "Madonna"], ["Smells Like Teen Spirit (1991)", "Nirvana"], ["...Baby One More Time (1998)", "Britney Spears"], ["Wannabe (1996)", "Spice Girls"], ["Take On Me (1985)", "a-ha"], ["Purple Rain (1984)", "Prince"], ["I Will Always Love You (1992)", "Whitney Houston"], ["Livin' on a Prayer (1986)", "Bon Jovi"], ["Welcome to the Jungle (1987)", "Guns N' Roses"], ["Wonderwall (1995)", "Oasis"], ["Barbie Girl (1997)", "Aqua"], ["Never Gonna Give You Up (1987)", "Rick Astley"], ["Girls Just Want to Have Fun (1983)", "Cyndi Lauper"], ["The Final Countdown (1986)", "Europe"], ["I Want It That Way (1999)", "Backstreet Boys"], ["My Heart Will Go On (1997)", "Celine Dion"], ["Losing My Religion (1991)", "R.E.M."], ["Every Breath You Take (1983)", "The Police"], ["Another One Bites the Dust (1980)", "Queen"], ["Sandstorm (1999)", "Darude"], ["Blue (Da Ba Dee) (1998)", "Eiffel 65"], ["Wake Me Up Before You Go-Go (1984)", "Wham!"], ["Africa (1982)", "Toto"], ["Torn (1997)", "Natalie Imbruglia"]], "Taylor Swift Songs": [["Fearless, 2008: Romeo and Juliet-themed hit", "Love Story"], ["Fearless: video where she plays both nerd and mean girl", "You Belong with Me"], ["Fearless: song about her first high school year", "Fifteen"], ["1989: star-studded video with Selena and Kendrick", "Bad Blood"], ["1989: video as an unhinged girlfriend in a mansion", "Blank Space"], ["1989 lead single, 2014, dancing-in-every-genre video", "Shake It Off"], ["1989: video shot as a 1950s African safari film", "Wildest Dreams"], ["Red: 10-minute version with Sadie Sink short film", "All Too Well"], ["Red: duet with Ed Sheeran", "Everything Has Changed"], ["Midnights, 2022 lead single, three Taylors at dinner", "Anti-Hero"], ["Midnights: video co-starring Laura Dern as stepmother", "Bejeweled"], ["Midnights: duet with Lana Del Rey", "Snow on the Beach"], ["Reputation: video where she dances around unseen", "Delicate"], ["Lover, 2019 lead single with Brendon Urie", "ME!"], ["Lover: video where she transforms into a man", "The Man"], ["Folklore, 2020 lead single, cabin-and-piano video", "Cardigan"], ["Folklore: duet with Bon Iver", "Exile"], ["Evermore, 2020 lead single, magical forest video", "Willow"], ["Evermore: murder-mystery song featuring Haim", "No Body, No Crime"], ["Speak Now: response to Kanye's 2009 VMA interruption", "Innocent"], ["Speak Now: song reportedly about John Mayer", "Dear John"], ["Debut album, 2006: first single named after a country star", "Tim McGraw"], ["Debut album: crush on a classmate named Drew", "Teardrops on My Guitar"], ["Tortured Poets Department lead single with Post Malone", "Fortnight"], ["Life of a Showgirl, 2025 lead single, Hamlet reference", "The Fate of Ophelia"]], "Disney & Broadway Songs": [["Frozen: Elsa builds her ice palace on the mountain", "Let It Go"], ["The Lion King: Timon and Pumbaa teach Simba their motto", "Hakuna Matata"], ["The Little Mermaid: Sebastian urges Ariel to stay in the ocean", "Under the Sea"], ["Aladdin: magic carpet ride with Jasmine", "A Whole New World"], ["Moana: she longs to sail past the reef", "How Far I'll Go"], ["Encanto: the family gossips over the banished uncle", "We Don't Talk About Bruno"], ["Beauty and the Beast: Lumière's dinner show for Belle", "Be Our Guest"], ["The Lion King: Rafiki presents baby Simba at Pride Rock", "Circle of Life"], ["The Little Mermaid: Ariel in her grotto of human treasures", "Part of Your World"], ["Aladdin: Genie shows off his powers", "Friend Like Me"], ["Moana: Maui boasts about his gifts to humanity", "You're Welcome"], ["Mulan: Captain Shang trains the recruits", "I'll Make a Man Out of You"], ["Frozen: young Anna knocks on Elsa's closed door", "Do You Want to Build a Snowman?"], ["Hamilton: young Alexander vows not to waste his chance", "My Shot"], ["Wicked: Elphaba takes off on her broom, Act One finale", "Defying Gravity"], ["Wicked: Glinda gives Elphaba a makeover", "Popular"], ["Les Misérables: Fantine's despair after losing her job", "I Dreamed a Dream"], ["Phantom of the Opera: Phantom seduces Christine in his lair", "The Music of the Night"], ["The Lion King: Simba and Nala fall for each other", "Can You Feel the Love Tonight"], ["Tangled: Rapunzel and Flynn in the boat among lanterns", "I See the Light"], ["The Jungle Book: Baloo teaches Mowgli to relax", "The Bare Necessities"], ["Mary Poppins: the nanny makes tidying the nursery fun", "A Spoonful of Sugar"], ["Cats: Grizabella's big solo", "Memory"], ["The Little Mermaid: Ursula tempts Ariel into her deal", "Poor Unfortunate Souls"], ["Pinocchio: Jiminy Cricket's opening song, Disney's anthem", "When You Wish Upon a Star"]], "Songs with Colors in the Title": [["Eiffel 65, 1999 Italian dance hit", "Blue (Da Ba Dee)"], ["Prince, 1984 film title track", "Purple Rain"], ["Coldplay, 2000 breakthrough single", "Yellow"], ["Rolling Stones, 1966 sitar-driven hit", "Paint It Black"], ["Jimi Hendrix, 1967, named after a colourful fog", "Purple Haze"], ["Beatles, 1966, Ringo sings, later an animated film", "Yellow Submarine"], ["Chris de Burgh, 1986 slow-dance ballad", "The Lady in Red"], ["UB40, 1983 reggae cover of Neil Diamond", "Red Red Wine"], ["Elton John, 1973 album title track, Wizard of Oz nod", "Goodbye Yellow Brick Road"], ["Joni Mitchell, 1970 environmental hit, Counting Crows covered it", "Big Yellow Taxi"], ["Taylor Swift, 2012 album's title track", "Red"], ["Lana Del Rey, 2012 single named after denim", "Blue Jeans"], ["Michael Jackson, 1991, morphing faces video", "Black or White"], ["Amy Winehouse, 2006 album title track", "Back to Black"], ["Bing Crosby, best-selling holiday single ever", "White Christmas"], ["Procol Harum, 1967 organ-driven classic", "A Whiter Shade of Pale"], ["New Order, 1983, best-selling 12-inch single", "Blue Monday"], ["Doja Cat, 2023 hit sampling Dionne Warwick", "Paint the Town Red"], ["Taylor Swift, 2022, opening track of Midnights", "Lavender Haze"], ["Carl Perkins, 1956, Elvis covered it, about footwear", "Blue Suede Shoes"], ["Little Mix, 2015 single about a love potion", "Black Magic"], ["Alannah Myles, 1989 bluesy ode to Elvis", "Black Velvet"], ["Metallica, 1984 ballad on Ride the Lightning", "Fade to Black"], ["Bobby Vinton, 1963, later a David Lynch film title", "Blue Velvet"], ["Booker T. & the M.G.'s, 1962 instrumental", "Green Onions"]], "Bands with Numbers": [["Pop-punk trio, 'All the Small Things'", "Blink-182"], ["Adam Levine's band, 'Moves Like Jagger'", "Maroon 5"], ["Irish rock band fronted by Bono", "U2"], ["Queens rapper, 'In Da Club'", "50 Cent"], ["Rob Thomas's band, 'Push' and 'Unwell'", "Matchbox Twenty"], ["'Kryptonite' rock band from Mississippi", "3 Doors Down"], ["Canadian pop-punk band, 'Fat Lip'", "Sum 41"], ["Australian pop-punk band, 'She Looks So Perfect'", "5 Seconds of Summer"], ["'Love Shack' party band from Georgia", "The B-52's"], ["Birmingham reggae band, 'Red Red Wine'", "UB40"], ["Michael's childhood family group, 'ABC'", "The Jackson 5"], ["Camila Cabello's X Factor girl group", "Fifth Harmony"], ["Nick Lachey's boy band", "98 Degrees"], ["'Inside Out' alt-rock band, 1998", "Eve 6"], ["'California Love' rapper, died 1996", "2Pac"], ["'Kiss Me' band from the 1999 She's All That", "Sixpence None the Richer"], ["British kids' TV pop group, 'Reach'", "S Club 7"], ["British band, 1975 hit 'I'm Not in Love'", "10cc"], ["Dutch eurodance duo, 'Get Ready for This'", "2 Unlimited"], ["Philadelphia R&B group, 'End of the Road'", "Boyz II Men"], ["Matty Healy's Manchester band", "The 1975"], ["Trent Reznor's industrial band", "Nine Inch Nails"], ["Harry Styles' X Factor boy band", "One Direction"], ["Tyler Joseph's duo, 'Stressed Out'", "Twenty One Pilots"], ["London boy band, 'Stay Another Day'", "East 17"]], "Musical Instruments": [["88 black and white keys", "Piano"], ["Six strings, strummed around campfires", "Guitar"], ["Biggest bowed string instrument, played standing", "Double Bass"], ["Scottish bag with drones and a chanter", "Bagpipes"], ["Brass instrument played with a sliding tube", "Trombone"], ["Single-reed brass-bodied jazz horn, invented in Belgium", "Saxophone"], ["Black single-reed woodwind, Benny Goodman's instrument", "Clarinet"], ["Aboriginal Australian long wooden drone pipe", "Didgeridoo"], ["Small four-string Hawaiian guitar", "Ukulele"], ["Held under the chin and played with a bow", "Violin"], ["Bowed string instrument held between the knees", "Cello"], ["Large plucked orchestral strings with pedals", "Harp"], ["Silver woodwind held sideways", "Flute"], ["Church instrument with pipes and stops", "Organ"], ["Squeezebox with bellows and buttons", "Accordion"], ["Wooden bars struck with mallets", "Xylophone"], ["Large kettle-shaped orchestral drums", "Timpani"], ["Double-reed woodwind that tunes the orchestra", "Oboe"], ["Coiled brass, player's hand inside the bell", "French Horn"], ["Largest and lowest brass instrument", "Tuba"], ["Finland's national plucked zither", "Kantele"], ["Indian long-necked string instrument, Ravi Shankar", "Sitar"], ["Trinidad's instrument made from oil drums", "Steel Pan"], ["Pocket reed instrument Bob Dylan wears on a neck rack", "Harmonica"], ["Electronic instrument played without touching it", "Theremin"]], "Eurovision": [["Waterloo, 1974", "ABBA"], ["Euphoria, 2012", "Loreen"], ["Tattoo, 2023: winning country", "Sweden"], ["Zitti e buoni, 2021", "Måneskin"], ["Rise Like a Phoenix, 2014", "Conchita Wurst"], ["Cha Cha Cha, Finland's runner-up, 2023", "Käärijä"], ["Toy, 2018, chicken-clucking winner", "Netta"], ["Fairytale, 2009, fiddle-playing Norwegian", "Alexander Rybak"], ["Arcade, 2019", "Duncan Laurence"], ["The Code, 2024", "Nemo"], ["Stefania, 2022", "Kalush Orchestra"], ["1944, 2016", "Jamala"], ["Heroes, 2015", "Måns Zelmerlöw"], ["Satellite, 2010", "Lena"], ["Love Shine a Light, 1997", "Katrina and the Waves"], ["Ne partez pas sans moi, 1988, future superstar", "Celine Dion"], ["Hold Me Now, 1987, his second win", "Johnny Logan"], ["Wild Dances, 2004", "Ruslana"], ["Hard Rock Hallelujah, 2006", "Lordi"], ["Dancing Lasha Tumbai, runner-up 2007", "Verka Serduchka"], ["Amar pelos dois, 2017", "Salvador Sobral"], ["Molitva, 2007: winning country", "Serbia"], ["Diva, 1998", "Dana International"], ["Wasted Love, 2025: winning country", "Austria"], ["Everybody, 2001: winning country", "Estonia"]], "Dance Styles": [["Argentine dance in a close embrace", "Tango"], ["Viennese ballroom dance in 3/4 time", "Waltz"], ["Brazilian carnival dance", "Samba"], ["Andalusian dance with castanets and stomps", "Flamenco"], ["Pointe shoes and tutus", "Ballet"], ["Metal-plated shoes clicking out rhythms", "Tap dance"], ["B-boys doing headspins and windmills", "Breakdancing"], ["Cuban-rooted partner dance, mambo's cousin", "Salsa"], ["Harlem swing from the 1920s Savoy Ballroom", "Lindy Hop"], ["Bouncy Finnish dance-pavilion couple dance", "Humppa"], ["Booty-shaking move from Miley's 2013 VMAs", "Twerking"], ["Hawaiian dance telling stories with the hands", "Hula"], ["Moulin Rouge high kicks with frilly skirts", "Can-can"], ["Romantic partner dance from the Dominican Republic", "Bachata"], ["Cuban dance counted two, three, four-and-one", "Cha-cha"], ["1920s flapper dance with swivelling knees", "Charleston"], ["Middle Eastern hip isolations with a coin belt", "Belly dance"], ["Bohemian hopping dance to oom-pah music", "Polka"], ["Smooth ballroom: slow, slow, quick, quick", "Foxtrot"], ["Ballroom dance imitating a bullfight", "Paso doble"], ["Slowest Latin ballroom dance, 'dance of love'", "Rumba"], ["Fast Latin ballroom dance from rock'n'roll", "Jive"], ["Latin-inspired fitness class from Colombia", "Zumba"], ["Country rows doing the Achy Breaky steps", "Line dancing"], ["Finnish schottische, dance-pavilion classic", "Jenkka"]], "World Flags": [["🇯🇵", "Japan"], ["🇫🇮", "Finland"], ["🇸🇪", "Sweden"], ["🇳🇴", "Norway"], ["🇩🇰", "Denmark"], ["🇩🇪", "Germany"], ["🇫🇷", "France"], ["🇮🇹", "Italy"], ["🇪🇸", "Spain"], ["🇬🇧", "United Kingdom"], ["🇺🇸", "United States"], ["🇨🇦", "Canada"], ["🇧🇷", "Brazil"], ["🇨🇭", "Switzerland"], ["🇰🇷", "South Korea"], ["🇮🇳", "India"], ["🇨🇳", "China"], ["🇬🇷", "Greece"], ["🇹🇷", "Turkey"], ["🇲🇽", "Mexico"], ["🇦🇷", "Argentina"], ["🇵🇹", "Portugal"], ["🇯🇲", "Jamaica"], ["🇪🇪", "Estonia"], ["🇳🇵", "Nepal"]], "World Capitals": [["France", "Paris"], ["Germany", "Berlin"], ["Italy", "Rome"], ["Spain", "Madrid"], ["Japan", "Tokyo"], ["Egypt", "Cairo"], ["Canada", "Ottawa"], ["Australia", "Canberra"], ["Brazil", "Brasília"], ["Turkey", "Ankara"], ["Poland", "Warsaw"], ["Portugal", "Lisbon"], ["Greece", "Athens"], ["Hungary", "Budapest"], ["Czech Republic", "Prague"], ["Ireland", "Dublin"], ["Argentina", "Buenos Aires"], ["Kenya", "Nairobi"], ["South Korea", "Seoul"], ["Thailand", "Bangkok"], ["Switzerland", "Bern"], ["Morocco", "Rabat"], ["New Zealand", "Wellington"], ["Kazakhstan", "Astana"], ["Mongolia", "Ulaanbaatar"]], "Country Outlines": [["Boot kicking a ball into the Mediterranean", "Italy"], ["Extremely long, thin strip down South America's Pacific coast", "Chile"], ["Long jagged fjord coast wrapping over Sweden", "Norway"], ["Curved chain of islands east of Korea", "Japan"], ["Long S-curve hugging the South China Sea", "Vietnam"], ["Thin river strip poking into Senegal", "The Gambia"], ["Huge triangle pointing down between Arabian Sea and Bay of Bengal", "India"], ["Island continent with a big bite out of the north", "Australia"], ["Number 7 shape on the Horn of Africa", "Somalia"], ["Nordic 'maiden' with one raised arm", "Finland"], ["Teardrop island off India's southern tip", "Sri Lanka"], ["Huge island off Africa's southeast coast", "Madagascar"], ["Three-fingered peninsulas plus islands, Aegean Sea", "Greece"], ["Peninsula pointing north from Germany, plus islands", "Denmark"], ["S-shaped isthmus joining Central and South America", "Panama"], ["Boomerang crescent hugging the Adriatic coast", "Croatia"], ["Long thin country along a huge lake, southeast Africa", "Malawi"], ["Round country completely surrounded by South Africa", "Lesotho"], ["Long lizard-shaped island south of Florida", "Cuba"], ["Thousands of islands strung along the equator, Southeast Asia", "Indonesia"], ["Near-perfect square plus Sinai triangle, northeast Africa", "Egypt"], ["Elephant head with trunk down the Malay Peninsula", "Thailand"], ["Narrow rectangle on Iberia's Atlantic edge", "Portugal"], ["Two long islands southeast of Australia", "New Zealand"], ["Round-ish North Atlantic island just below the Arctic Circle", "Iceland"]], "African Countries": [["Pyramids of Giza, capital Cairo", "Egypt"], ["Most populous African country, capital Abuja", "Nigeria"], ["Rainbow Nation with three capital cities", "South Africa"], ["Marrakech, Casablanca, capital Rabat", "Morocco"], ["Capital Nairobi, Maasai Mara safaris", "Kenya"], ["Kilimanjaro, Serengeti and Zanzibar", "Tanzania"], ["Capital Addis Ababa, birthplace of coffee", "Ethiopia"], ["Capital Accra, formerly the Gold Coast", "Ghana"], ["Huge island nation famous for lemurs", "Madagascar"], ["Largest African country by area, capital Algiers", "Algeria"], ["Capital Tunis, ruins of Carthage", "Tunisia"], ["Capital Dakar, westernmost point of mainland Africa", "Senegal"], ["Gorilla trekking, capital Kigali", "Rwanda"], ["Capital Kampala, on Lake Victoria", "Uganda"], ["Capital Harare, shares Victoria Falls with Zambia", "Zimbabwe"], ["Capital Luanda, Portuguese-speaking oil producer", "Angola"], ["Capital Windhoek, Namib Desert dunes", "Namibia"], ["Capital Tripoli, ruled by Gaddafi until 2011", "Libya"], ["Capital Khartoum, where the two Niles meet", "Sudan"], ["Capital Kinshasa, formerly Zaire", "DR Congo"], ["Capital Maputo, Portuguese-speaking, Indian Ocean coast", "Mozambique"], ["Mountain kingdom fully surrounded by South Africa", "Lesotho"], ["Capital Gaborone, Okavango Delta", "Botswana"], ["Capital Bamako, home of Timbuktu", "Mali"], ["Indian Ocean island nation, capital Port Louis", "Mauritius"]], "Asian Countries": [["Sushi, Mount Fuji, capital Tokyo", "Japan"], ["Great Wall, capital Beijing", "China"], ["Taj Mahal, capital New Delhi", "India"], ["K-pop and Samsung, capital Seoul", "South Korea"], ["Capital Bangkok, tuk-tuks and pad thai", "Thailand"], ["Capital Hanoi, home of pho", "Vietnam"], ["Bali, capital Jakarta", "Indonesia"], ["7,000+ islands, capital Manila", "Philippines"], ["Petronas Towers in Kuala Lumpur", "Malaysia"], ["City-state with Marina Bay Sands", "Singapore"], ["Mount Everest, capital Kathmandu", "Nepal"], ["Angkor Wat, capital Phnom Penh", "Cambodia"], ["Capital Islamabad, biggest city Karachi", "Pakistan"], ["Island formerly called Ceylon", "Sri Lanka"], ["Capital Ulaanbaatar, Genghis Khan's homeland", "Mongolia"], ["Capital Tehran, formerly Persia", "Iran"], ["Himalayan kingdom measuring Gross National Happiness", "Bhutan"], ["Capital Dhaka", "Bangladesh"], ["Capital Pyongyang, Kim dynasty", "North Korea"], ["Largest landlocked country, capital Astana", "Kazakhstan"], ["Landlocked, capital Vientiane", "Laos"], ["Capital Kabul, ruled by the Taliban", "Afghanistan"], ["Burj Khalifa in Dubai", "United Arab Emirates"], ["Capital Riyadh, holy city Mecca", "Saudi Arabia"], ["Island nation of atolls, capital Malé", "Maldives"]], "USA States": [["Lone Star State, capital Austin", "Texas"], ["Hollywood and Silicon Valley", "California"], ["Sunshine State, home of Miami", "Florida"], ["Aloha State of volcanic islands", "Hawaii"], ["Largest state, bought from Russia in 1867", "Alaska"], ["Las Vegas casinos", "Nevada"], ["Grand Canyon State", "Arizona"], ["Motor City Detroit", "Michigan"], ["Windy City Chicago", "Illinois"], ["Seattle, Starbucks' birthplace", "Washington"], ["Empire State, home of the Big Apple", "New York"], ["Smallest state by area", "Rhode Island"], ["Peach State, capital Atlanta", "Georgia"], ["Mardi Gras in New Orleans", "Louisiana"], ["Nashville, plus Graceland in Memphis", "Tennessee"], ["Mount Rushmore", "South Dakota"], ["Capital Boston, Harvard", "Massachusetts"], ["Potato state, capital Boise", "Idaho"], ["Mile High City Denver", "Colorado"], ["Least populous state, most of Yellowstone", "Wyoming"], ["Lobsters, most northeastern state", "Maine"], ["Capital Salt Lake City", "Utah"], ["Bourbon and the Derby in Louisville", "Kentucky"], ["First state to ratify the Constitution", "Delaware"], ["Crater Lake, capital Salem, city of Portland", "Oregon"]], "Mountain Ranges": [["Mount Everest's range", "Himalayas"], ["Mont Blanc and the Matterhorn", "Alps"], ["World's longest continental range, South America", "Andes"], ["Spine of North America, Colorado to Canada", "Rocky Mountains"], ["France–Spain border, Andorra sits inside", "Pyrenees"], ["Divides Europe from Asia inside Russia", "Ural Mountains"], ["Eastern US range with a famous long-distance trail", "Appalachians"], ["North African range, Morocco's Toubkal", "Atlas Mountains"], ["Arc through Romania's Transylvania, Dracula country", "Carpathians"], ["Mount Elbrus, between the Black and Caspian seas", "Caucasus"], ["Norway–Sweden spine; Finland's highest point Halti", "Scandinavian Mountains"], ["Pale Italian limestone peaks around Cortina d'Ampezzo", "Dolomites"], ["K2's range, Pakistan–China border", "Karakoram"], ["California range with Yosemite and Mount Whitney", "Sierra Nevada"], ["Italy's spine, running down the whole peninsula", "Apennines"], ["Afghanistan's great range, west of the Himalayas", "Hindu Kush"], ["'Dragon Mountains' of South Africa and Lesotho", "Drakensberg"], ["Runs the length of eastern Australia", "Great Dividing Range"], ["'Roof of the World', mostly in Tajikistan", "Pamir"], ["Mount St. Helens and Mount Rainier", "Cascade Range"], ["Zakopane ski peaks, Poland–Slovakia border", "Tatra Mountains"], ["Home of Denali, North America's highest peak", "Alaska Range"], ["Mexico's main ranges, Occidental and Oriental", "Sierra Madre"], ["German range, Brocken peak, Walpurgis witches", "Harz"], ["Long range across western Iran", "Zagros"]], "Airport Codes": [["HEL", "Helsinki"], ["JFK", "New York"], ["LHR", "London"], ["CDG", "Paris"], ["ARN", "Stockholm"], ["CPH", "Copenhagen"], ["OSL", "Oslo"], ["AMS", "Amsterdam"], ["FRA", "Frankfurt"], ["LAX", "Los Angeles"], ["DXB", "Dubai"], ["NRT", "Tokyo"], ["BCN", "Barcelona"], ["FCO", "Rome"], ["MAD", "Madrid"], ["MUC", "Munich"], ["IST", "Istanbul"], ["SIN", "Singapore"], ["SFO", "San Francisco"], ["ORD", "Chicago"], ["TLL", "Tallinn"], ["BER", "Berlin"], ["RVN", "Rovaniemi"], ["BKK", "Bangkok"], ["LIS", "Lisbon"]], "Currency Symbols": [["€", "Euro"], ["£", "British pound"], ["¥ (Japan)", "Yen"], ["¥ (China)", "Yuan"], ["₹", "Indian rupee"], ["₽", "Russian ruble"], ["₩ (South Korea)", "Won"], ["₺", "Turkish lira"], ["₴", "Ukrainian hryvnia"], ["₪", "Israeli shekel"], ["₦", "Nigerian naira"], ["₱", "Philippine peso"], ["₫", "Vietnamese dong"], ["฿", "Thai baht"], ["₿", "Bitcoin"], ["zł", "Polish złoty"], ["Kč", "Czech koruna"], ["Ft", "Hungarian forint"], ["R$", "Brazilian real"], ["A$", "Australian dollar"], ["HK$", "Hong Kong dollar"], ["kr (Sweden)", "Krona"], ["₸", "Kazakhstani tenge"], ["₾", "Georgian lari"], ["₵", "Ghanaian cedi"]], "Iconic Buildings & Structures": [["Paris wrought-iron lattice landmark, 1889 World's Fair", "Eiffel Tower"], ["Rome's ancient amphitheatre for gladiators", "Colosseum"], ["White marble mausoleum in Agra, India", "Taj Mahal"], ["Copper lady with a torch in New York Harbor", "Statue of Liberty"], ["Great bell in London's Westminster clock tower", "Big Ben"], ["Australian venue with white sail-shaped shells", "Sydney Opera House"], ["Dubai's 828-metre skyscraper", "Burj Khalifa"], ["Ming-era defensive barrier snaking thousands of kilometres", "Great Wall of China"], ["Italian campanile that famously tilts", "Leaning Tower of Pisa"], ["Orange suspension span in San Francisco", "Golden Gate Bridge"], ["Gaudí's still-unfinished basilica in Barcelona", "Sagrada Família"], ["Inca citadel high in the Peruvian Andes", "Machu Picchu"], ["Khufu's tomb, the last ancient wonder standing", "Great Pyramid of Giza"], ["Prehistoric megalith ring on Salisbury Plain", "Stonehenge"], ["Moscow church with colourful onion domes on Red Square", "St. Basil's Cathedral"], ["Temple to Athena atop the Acropolis", "Parthenon"], ["Art Deco NYC skyscraper King Kong climbed", "Empire State Building"], ["Arms-outstretched statue above Rio de Janeiro", "Christ the Redeemer"], ["London's Victorian Thames crossing whose roadway lifts for ships", "Tower Bridge"], ["I. M. Pei's glass entrance in a Paris museum courtyard", "Louvre Pyramid"], ["Twin skyscrapers in Kuala Lumpur", "Petronas Towers"], ["Bavarian fairytale castle that inspired Disney", "Neuschwanstein"], ["Cambodian temple complex pictured on the national flag", "Angkor Wat"], ["White, green-domed Lutheran church on Senate Square", "Helsinki Cathedral"], ["Istanbul's giant-domed Byzantine church turned mosque", "Hagia Sophia"]], "World Leaders": [["First US president, face on the $1 bill", "George Washington"], ["Britain's WWII prime minister, cigar and V sign", "Winston Churchill"], ["South Africa's first Black president, jailed 27 years", "Nelson Mandela"], ["UK's 'Iron Lady' prime minister", "Margaret Thatcher"], ["US president assassinated in Dallas, 1963", "John F. Kennedy"], ["First Black US president, 2009–2017", "Barack Obama"], ["French emperor exiled to Elba and Saint Helena", "Napoleon Bonaparte"], ["Soviet leader of glasnost and perestroika", "Mikhail Gorbachev"], ["German chancellor 2005–2021", "Angela Merkel"], ["Finland's longest-serving president, 1956–1982", "Urho Kekkonen"], ["Finland's first female president, 2000–2012", "Tarja Halonen"], ["World's youngest serving PM when Finland picked her, 2019", "Sanna Marin"], ["Cuban revolutionary who ruled from 1959", "Fidel Castro"], ["Founded the People's Republic of China, Little Red Book", "Mao Zedong"], ["US president, Gettysburg Address, ended slavery", "Abraham Lincoln"], ["Last active pharaoh of Egypt, with Mark Antony", "Cleopatra"], ["Roman dictator stabbed on the Ides of March", "Julius Caesar"], ["German-born empress who ruled Russia 1762–1796", "Catherine the Great"], ["New Zealand PM through Covid, resigned 2023", "Jacinda Ardern"], ["Finnish president 1994–2000, Nobel Peace Prize 2008", "Martti Ahtisaari"], ["Free French leader, founded France's Fifth Republic", "Charles de Gaulle"], ["British queen who reigned 70 years, died 2022", "Elizabeth II"], ["Finland's president 2012–2024, before Stubb", "Sauli Niinistö"], ["US president who resigned over Watergate, 1974", "Richard Nixon"], ["Finnish marshal, president 1944–1946", "Mannerheim"]], "USA Presidents": [["First president, face on the $1 bill", "George Washington"], ["Gettysburg Address, assassinated 1865", "Abraham Lincoln"], ["First Black president, took office 2009", "Barack Obama"], ["Main author of the Declaration of Independence", "Thomas Jefferson"], ["Assassinated in Dallas, 1963", "John F. Kennedy"], ["Resigned over the Watergate scandal", "Richard Nixon"], ["Former Hollywood actor, two terms in the 80s", "Ronald Reagan"], ["Teddy bear namesake, Rough Rider", "Theodore Roosevelt"], ["Elected four times, launched the New Deal", "Franklin D. Roosevelt"], ["Saxophone-playing 42nd president", "Bill Clinton"], ["Peanut farmer from Georgia, 39th president", "Jimmy Carter"], ["43rd president, in office on 9/11", "George W. Bush"], ["WWII general nicknamed Ike", "Dwight D. Eisenhower"], ["Ordered the atomic bombings of Japan", "Harry Truman"], ["46th president, from Delaware", "Joe Biden"], ["45th and 47th president", "Donald Trump"], ["41st president, father of the 43rd", "George H. W. Bush"], ["5th president, doctrine warning Europe off the Americas", "James Monroe"], ["4th president, Father of the Constitution", "James Madison"], ["2nd president, father of the 6th", "John Adams"], ["7th president, face on the $20 bill", "Andrew Jackson"], ["Took over when Nixon resigned", "Gerald Ford"], ["Shortest presidency, died after 31 days", "William Henry Harrison"], ["Union Civil War general, 18th president", "Ulysses S. Grant"], ["Heaviest president, later Chief Justice", "William Howard Taft"]], "Famous Athletes": [["Portuguese striker of Man United, Real and Juventus", "Cristiano Ronaldo"], ["Argentine 2022 World Cup captain, now Inter Miami", "Lionel Messi"], ["Jamaican sprinter, 9.58 100m world record", "Usain Bolt"], ["Swiss tennis great with eight Wimbledon titles", "Roger Federer"], ["Spanish King of Clay, 14 French Opens", "Rafael Nadal"], ["Serbian tennis star with 24 Grand Slams", "Novak Djokovic"], ["American swimmer with 23 Olympic golds", "Michael Phelps"], ["British seven-time Formula 1 champion", "Lewis Hamilton"], ["Dutch four-time Formula 1 champion", "Max Verstappen"], ["Swedish striker famous for taekwondo-style kicks", "Zlatan Ibrahimović"], ["Norwegian goal machine at Manchester City", "Erling Haaland"], ["American gymnast with a record number of medals", "Simone Biles"], ["Tennis legend with 23 Slams, Venus's sister", "Serena Williams"], ["Golfer with 15 majors, nicknamed after a big cat", "Tiger Woods"], ["Chicago Bulls legend wearing number 23", "Michael Jordan"], ["Lakers legend nicknamed the Black Mamba", "Kobe Bryant"], ["Finnish Iceman, 2007 Formula 1 champion", "Kimi Räikkönen"], ["Norwegian 400m hurdles Olympic champion in Tokyo", "Karsten Warholm"], ["Swedish pole vaulter, serial world record breaker", "Armand Duplantis"], ["French striker, 2018 World Cup winner, Real Madrid", "Kylian Mbappé"], ["Brazilian legend with three World Cup wins", "Pelé"], ["Argentine who scored the Hand of God goal", "Diego Maradona"], ["Spanish Wimbledon champion in 2023 and 2024", "Carlos Alcaraz"], ["Swedish tennis icon, five straight Wimbledons", "Björn Borg"], ["German seven-time Formula 1 champion", "Michael Schumacher"]], "Football Players": [["Portuguese forward known as CR7", "Cristiano Ronaldo"], ["Argentine with eight Ballon d'Ors, plays in Miami", "Lionel Messi"], ["Norwegian goal machine at Manchester City", "Erling Haaland"], ["French forward, 2018 World Cup winner, joined Real Madrid 2024", "Kylian Mbappé"], ["Egyptian winger, Liverpool's goal king", "Mohamed Salah"], ["Swedish striker with famous ego, ex-PSG and Milan", "Zlatan Ibrahimović"], ["England captain who moved to Bayern Munich in 2023", "Harry Kane"], ["R9, Brazilian striker, 2002 World Cup Golden Boot", "Ronaldo Nazário"], ["English midfielder at Real Madrid, Birmingham academy", "Jude Bellingham"], ["Married a Spice Girl, famous for free kicks", "David Beckham"], ["French legend, headbutt in the 2006 final", "Zinedine Zidane"], ["Finnish centre-back, Liverpool's 2005 Champions League winner", "Sami Hyypiä"], ["Finnish icon nicknamed Litti, ex-Ajax and Barcelona", "Jari Litmanen"], ["Croatian midfielder, 2018 Ballon d'Or winner", "Luka Modrić"], ["Brazilian, world-record transfer from Barcelona to PSG", "Neymar"], ["Polish striker, Bayern legend, then Barcelona", "Robert Lewandowski"], ["Belgian playmaker, longtime Manchester City number 17", "Kevin De Bruyne"], ["Dutch centre-back, Liverpool captain", "Virgil van Dijk"], ["Brazilian AC Milan star, 2007 Ballon d'Or", "Kaká"], ["Toothy-smiled Brazilian, Barcelona, 2005 Ballon d'Or", "Ronaldinho"], ["Welsh winger at Real Madrid, loves golf", "Gareth Bale"], ["Italian goalkeeper, Juventus legend, 2006 world champion", "Gianluigi Buffon"], ["Norwegian playmaker captaining Arsenal", "Martin Ødegaard"], ["French striker, Arsenal's all-time top scorer", "Thierry Henry"], ["Spanish teen winger, Euro 2024 winner, Barcelona", "Lamine Yamal"]], "NHL Teams": [["Florida team captained by Finn Aleksander Barkov", "Panthers"], ["Nashville team with Finnish goalie Juuse Saros", "Predators"], ["Raleigh, North Carolina team of Finn Sebastian Aho", "Hurricanes"], ["Dallas team with Finnish defenceman Miro Heiskanen", "Stars"], ["Winnipeg team, Patrik Laine's first NHL club", "Jets"], ["Anaheim team where Teemu Selänne won the 2007 Cup", "Ducks"], ["Toronto's Original Six club, last Cup in 1967", "Maple Leafs"], ["Montreal's 'Habs', record 24 Stanley Cups", "Canadiens"], ["Boston's Original Six club with the spoked-B logo", "Bruins"], ["New York team playing at Madison Square Garden", "Rangers"], ["Detroit's 'Hockeytown' club, Steve Yzerman's longtime team", "Red Wings"], ["Edmonton team of Connor McDavid", "Oilers"], ["Pittsburgh team of Sidney Crosby", "Penguins"], ["Washington team of goal-record holder Alex Ovechkin", "Capitals"], ["Las Vegas expansion team, 2023 Cup champions", "Golden Knights"], ["Seattle team named for a sea monster, joined 2021", "Kraken"], ["Tampa team, back-to-back Cups in 2020 and 2021", "Lightning"], ["Los Angeles team Gretzky joined in the 1988 trade", "Kings"], ["Vancouver team, longtime home of the Sedin twins", "Canucks"], ["Calgary team, Edmonton's 'Battle of Alberta' rival", "Flames"], ["Philadelphia's 'Broad Street Bullies', mascot Gritty", "Flyers"], ["Denver team, 2022 Stanley Cup champions", "Avalanche"], ["Chicago's Original Six club, three Cups 2010 to 2015", "Blackhawks"], ["St. Louis team named after a music genre, 2019 Cup", "Blues"], ["New Jersey team named after a folklore creature", "Devils"]], "Tech Founders & CEOs": [["Apple co-founder in a black turtleneck", "Steve Jobs"], ["Microsoft co-founder turned philanthropist", "Bill Gates"], ["Started Facebook in his Harvard dorm", "Mark Zuckerberg"], ["Tesla and SpaceX boss who bought Twitter", "Elon Musk"], ["Started Amazon in a garage, 1994", "Jeff Bezos"], ["Succeeded Steve Jobs as Apple CEO in 2011", "Tim Cook"], ["Indian-born Google CEO since 2015", "Sundar Pichai"], ["Microsoft CEO since 2014", "Satya Nadella"], ["OpenAI CEO, briefly fired in 2023", "Sam Altman"], ["Nvidia co-founder in a leather jacket", "Jensen Huang"], ["Finn who created the Linux kernel", "Linus Torvalds"], ["Google co-founder alongside Sergey Brin", "Larry Page"], ["Google co-founder alongside Larry Page", "Sergey Brin"], ["Apple co-founder who built the Apple I", "Steve Wozniak"], ["Twitter co-founder who also started Square", "Jack Dorsey"], ["Snapchat co-founder married to Miranda Kerr", "Evan Spiegel"], ["YouTube CEO 2014–2023, rented her garage to Google", "Susan Wojcicki"], ["Ex-Google exec who became Yahoo CEO in 2012", "Marissa Mayer"], ["Swedish Spotify co-founder", "Daniel Ek"], ["Airbnb co-founder who rented out air mattresses", "Brian Chesky"], ["Uber co-founder ousted as CEO in 2017", "Travis Kalanick"], ["Netflix co-founder, started with DVDs by mail", "Reed Hastings"], ["AMD CEO since 2014", "Lisa Su"], ["Microsoft co-founder who owned the Seattle Seahawks", "Paul Allen"], ["Finnish Supercell CEO, Clash of Clans", "Ilkka Paananen"]], "Finnish Designers": [["Paimio chair and the Savoy vase", "Alvar Aalto"], ["Marimekko's Unikko poppy print", "Maija Isola"], ["Space-age Ball chair", "Eero Aarnio"], ["Tulip chair and the TWA Flight Center", "Eero Saarinen"], ["Kantarelli vase and Ultima Thule glassware", "Tapio Wirkkala"], ["Teema tableware for Arabia", "Kaj Franck"], ["Iittala's glass birds", "Oiva Toikka"], ["Fiskars orange-handled scissors", "Olof Bäckström"], ["Iittala Kivi votive candleholders", "Heikki Orvola"], ["Bölgeblick rippled glassware", "Aino Aalto"], ["Marimekko's striped Jokapoika shirt", "Vuokko Nurmesniemi"], ["Helsinki Central Station", "Eliel Saarinen"], ["Stackable Domus chair", "Ilmari Tapiovaara"], ["Block lamp, a bulb inside glass ice", "Harri Koskinen"], ["Iittala's red 'i' logo and cast-iron pot", "Timo Sarpaneva"], ["Iittala Taika tableware with fairytale prints", "Klaus Haapaniemi"], ["Marimekko's Siirtolapuutarha allotment print", "Maija Louekari"], ["Fibreglass Karuselli lounge chair", "Yrjö Kukkapuro"], ["Arabia's brown Ruska tableware", "Ulla Procopé"], ["Arabia's Paratiisi fruit-and-flower tableware", "Birger Kaipiainen"], ["Marimekko's Tasaraita striped tops", "Annika Rimala"], ["Toronto City Hall's curved towers", "Viljo Revell"], ["Wooden-bead jewellery and Christmas sheep", "Kaija Aarikka"], ["Fashion brand Ivana Helsinki", "Paola Suhonen"], ["Shoes with bunny ears", "Minna Parikka"]], "Finnish Political Symbols & Party Logos": [["Party of Sauli Niinistö and Alexander Stubb", "Kokoomus"], ["Sanna Marin and Antti Rinne's red party", "SDP"], ["Timo Soini and Jussi Halla-aho's party", "Perussuomalaiset"], ["Former Agrarian League, green clover logo", "Keskusta"], ["Dandelion logo, environmental party", "Vihreät"], ["Li Andersson's left-wing party", "Vasemmistoliitto"], ["Party of Swedish-speaking Finns", "RKP"], ["Päivi Räsänen and Sari Essayah's party", "KD"], ["Hjallis Harkimo's movement party", "Liike Nyt"], ["Finland's national bird", "Whooper swan"], ["Finland's national flower", "Lily of the valley"], ["Crowned animal on Finland's coat of arms", "Lion"], ["Finland's national animal", "Brown bear"], ["Finland's national fish", "European perch"], ["Finland's national tree", "Silver birch"], ["National epic compiled by Elias Lönnrot", "Kalevala"], ["National anthem, words by Runeberg", "Maamme"], ["Nickname of the blue-cross flag", "Siniristilippu"], ["Finland's national instrument, plucked and zither-like", "Kantele"]], "Finnish National Parks": [["Espoo forests near Helsinki, flying squirrel symbol", "Nuuksio"], ["Iconic hilltop view over Lake Pielinen", "Koli"], ["Lapland fells, Hetta hiking trail, Muonio and Enontekiö", "Pallas-Yllästunturi"], ["Lapland park named after a president, Saariselkä", "Urho Kekkonen"], ["Kuusamo, the Bear's Ring trail", "Oulanka"], ["Lapinsalmi suspension bridge, Olhavanvuori cliff", "Repovesi"], ["Saimaa ringed seals, Lake Haukivesi islands", "Linnansaari"], ["Finland's largest national park, gold panning in Inari", "Lemmenjoki"], ["Pirkanmaa old forests, Kovero heritage farm", "Seitseminen"], ["Outer islands off Turku, Nagu and Korpo seascape", "Archipelago National Park"], ["Finland's 40th park, opened 2017, Suomussalmi", "Hossa"], ["Snow-crowned 'tykky' trees, Posio", "Riisitunturi"], ["Lampivaara amethyst mine, Lapland ski fells", "Pyhä-Luosto"], ["Forest park on Helsinki's eastern edge, founded 2011", "Sipoonkorpi"], ["Wild forest reindeer, Central Ostrobothnia", "Salamajärvi"], ["Ice Age sand dunes and pine heaths near Oulu", "Rokua"], ["Pulkkilanharju esker, Finland's second-largest lake", "Päijänne"], ["Ruovesi wilderness with a dramatic rift gorge", "Helvetinjärvi"]], "Video Game Consoles": [["Nintendo's 2017 hybrid, docked or handheld", "Switch"], ["Sony's first home console, 1994", "PlayStation"], ["Microsoft's first console, 2001", "Xbox"], ["Nintendo's 2006 motion-control console with remote", "Wii"], ["Nintendo handheld bundled with Tetris, 1989", "Game Boy"], ["Sega's 16-bit console, called Genesis in America", "Mega Drive"], ["Sega's final console, 1998, built-in modem", "Dreamcast"], ["Dual-screen handheld with stylus, 2004", "Nintendo DS"], ["Cartridge console where GoldenEye 007 was a hit", "Nintendo 64"], ["Nintendo's 2001 boxy console with a carry handle", "GameCube"], ["1977 woodgrain cartridge console, also called VCS", "Atari 2600"], ["Sony's 2004 handheld using UMD discs", "PSP"], ["Nintendo's 2012 console with tablet-like GamePad", "Wii U"], ["Valve's handheld gaming PC, 2022", "Steam Deck"], ["Microsoft's 2005 console, infamous red ring of death", "Xbox 360"], ["Sony's 2020 console with DualSense controller", "PlayStation 5"], ["Nintendo's 8-bit console, Famicom in Japan", "NES"], ["Nintendo's 16-bit console, home of Super Mario World", "SNES"], ["Microsoft's 2020 flagship, black tower shape", "Xbox Series X"], ["Nintendo's 2011 glasses-free stereoscopic handheld", "3DS"], ["Sony's 2000 console with built-in DVD player", "PlayStation 2"], ["Sega's 1990 colour handheld rival to Nintendo's", "Game Gear"], ["Nintendo's 1995 red-screen headset flop", "Virtual Boy"], ["Nokia's 2003 phone-and-console hybrid", "N-Gage"], ["Sony's PSP successor, launched 2011", "PlayStation Vita"]], "Retro Tech": [["Sony's portable cassette player from 1979", "Walkman"], ["Nintendo's 1989 handheld bundled with Tetris", "Game Boy"], ["Egg-shaped keychain pet you had to feed", "Tamagotchi"], ["Square storage medium, now the 'save' icon", "Floppy Disk"], ["Beeper on your belt showing a number to call back", "Pager"], ["Indestructible Finnish brick phone from 2000 with Snake", "Nokia 3310"], ["Video cassette format that beat Betamax", "VHS"], ["Sony's video cassette format that lost to VHS", "Betamax"], ["Apple's 2001 music player: '1,000 songs in your pocket'", "iPod"], ["Instant camera whose photos people shook to develop", "Polaroid"], ["Sony's portable CD player", "Discman"], ["Mixtape medium you rewound with a pencil", "Cassette"], ["Sends paper documents over phone lines", "Fax"], ["Screeching modem internet connection", "Dial-up"], ["Microsoft chat app with nudges and custom statuses", "MSN Messenger"], ["Best-selling 8-bit home computer, launched 1982", "Commodore 64"], ["Stylus-driven handheld organiser launched in 1996", "PalmPilot"], ["Canadian QWERTY smartphone famous for addictive BBM", "BlackBerry"], ["Landline you dialled by spinning a numbered wheel", "Rotary Phone"], ["Shoulder-carried stereo with a cassette deck", "Boombox"], ["Classroom machine projecting transparencies onto a wall", "Overhead Projector"], ["1999 music file-sharing service shut down by lawsuits", "Napster"], ["Owl-like talking toy, 1998 holiday craze", "Furby"], ["Page-numbered text news service on your TV", "Teletext"], ["Vinyl-sized shiny disc for movies, before DVD", "LaserDisc"]], "Computer Parts": [["The computer's brain, made by Intel or AMD", "CPU"], ["Short-term memory sticks measured in gigabytes", "RAM"], ["Main circuit board everything plugs into", "Motherboard"], ["Renders games; Nvidia's GeForce is one", "Graphics card"], ["Spinning magnetic platters that store your files", "Hard drive"], ["Fast flash storage with no moving parts", "SSD"], ["PSU: converts wall AC to DC", "Power supply"], ["Finned metal block drawing heat from chips", "Heatsink"], ["Goo spread between CPU and cooler", "Thermal paste"], ["Clicking pointing device", "Mouse"], ["QWERTY input device", "Keyboard"], ["Desktop's display screen", "Monitor"], ["Firmware that runs first at boot, replaced by UEFI", "BIOS"], ["Ethernet adapter, abbreviated NIC", "Network card"], ["Tray that reads CDs and DVDs", "Optical drive"], ["Coin cell keeping the motherboard clock alive", "CMOS battery"], ["Metal box housing all the components", "Case"], ["High-speed expansion slot standard for graphics cards", "PCIe"], ["Plug-in port standard; Type-C is newest", "USB"], ["Laptop's finger-tracking surface", "Trackpad"], ["Little camera for video calls", "Webcam"], ["Obsolete reader for 3.5-inch disks", "Floppy drive"], ["Audio expansion board, Creative's Blaster line", "Sound card"], ["Tiny ultra-fast memory inside the CPU: L1, L2, L3", "Cache"], ["Motherboard chip set linking CPU and peripherals", "Chipset"]], "Tech Company Logos": [["Fruit with a bite taken out", "Apple"], ["Little blue bird", "Twitter"], ["Four coloured squares in a grid", "Microsoft"], ["Six-letter wordmark: blue, red, yellow, blue, green, red", "Google"], ["Smile-shaped arrow pointing from A to Z", "Amazon"], ["Green circle with three curved black lines", "Spotify"], ["White ghost on yellow", "Snapchat"], ["Camera outline on purple-orange gradient", "Instagram"], ["Browser maker: orange fox wrapped around a globe", "Mozilla"], ["Black octocat silhouette", "GitHub"], ["Coral loop called the Bélo", "Airbnb"], ["Colourful hashtag made of rounded bars", "Slack"], ["Blue open package made of diamonds", "Dropbox"], ["Orange-pink flame", "Tinder"], ["Green speech bubble with phone handset", "WhatsApp"], ["White alien head on orange", "Reddit"], ["Purple smiling face shaped like a game controller", "Discord"], ["Music note with cyan and red glitch edges", "TikTok"], ["White paper plane in a blue circle", "Telegram"], ["Green owl mascot", "Duolingo"], ["Purple speech bubble with two eyes", "Twitch"], ["Red fan of flower-like petals, Chinese phone maker", "Huawei"], ["Green eye-shaped spiral, chip maker", "Nvidia"], ["Overlapping red and yellow circles", "Mastercard"], ["White quotation mark on a red circle", "Vodafone"]], "Programming Languages": [["Named after a British comedy troupe, not a snake", "Python"], ["Language of web browsers, built in ten days", "JavaScript"], ["Sun Microsystems language with a coffee cup logo", "Java"], ["Dennis Ritchie's 1972 language, Unix written in it", "C"], ["Bjarne Stroustrup's 1985 language", "C++"], ["Microsoft .NET language named after a music note", "C#"], ["Apple's 2014 language for iOS apps", "Swift"], ["JetBrains language, Google's pick for Android", "Kotlin"], ["Gem-named language behind the Rails framework", "Ruby"], ["Server language powering WordPress", "PHP"], ["Memory-safe language with crab mascot Ferris", "Rust"], ["Google language with gopher mascot, 2009", "Go"], ["Microsoft's typed superset of the browser's main language", "TypeScript"], ["Language for querying relational databases", "SQL"], ["Single-letter language for statistics", "R"], ["Larry Wall's scripting language, camel book", "Perl"], ["1959 business language, Grace Hopper influence", "COBOL"], ["IBM's 1957 scientific language", "Fortran"], ["Purely functional language named after logician Curry", "Haskell"], ["Brazilian scripting language, Portuguese for moon", "Lua"], ["Google's language behind Flutter", "Dart"], ["MIT's drag-and-drop blocks language for kids", "Scratch"], ["Low-level mnemonics like MOV and JMP", "Assembly"], ["Niklaus Wirth's 1970 language, named after a mathematician", "Pascal"], ["Dartmouth's 1964 beginner language, famous for GOTO", "BASIC"]], "Board Games": [["Buy properties, build hotels, pass Go", "Monopoly"], ["Colonel Mustard, candlestick, in the library", "Cluedo"], ["Letter tiles, triple word score", "Scrabble"], ["Trade wood, brick and sheep on hex tiles", "Catan"], ["Dice race: climb rungs, slide down serpents", "Snakes and Ladders"], ["Conquer the world with armies, hold Kamchatka", "Risk"], ["Claim train routes with coloured cards", "Ticket to Ride"], ["Collect pie wedges by answering questions", "Trivial Pursuit"], ["Kings, queens, bishops, checkmate", "Chess"], ["Black and white stones on a 19x19 grid", "Go"], ["Finnish classic: hunt the diamond across Africa", "Afrikan tähti"], ["Cooperatively cure four diseases before outbreaks", "Pandemic"], ["Lay tiles to build a medieval French city", "Carcassonne"], ["Jump pieces diagonally, get crowned at the end", "Checkers"], ["Pop-O-Matic dice bubble, Finnish name", "Kimble"], ["Spinner, career, little car full of pegs", "The Game of Life"], ["Spymasters give one-word hints to teammates", "Codenames"], ["Draw pictures for your team to guess", "Pictionary"], ["Finnish Tactic game: explain words to your team", "Alias"], ["Call grid coordinates to sink the fleet", "Battleship"], ["Drop red and yellow discs in a vertical grid", "Connect Four"], ["Race checkers home with a doubling cube", "Backgammon"], ["Draft Portuguese tiles to decorate a palace wall", "Azul"], ["Yes/no questions to find the hidden face", "Guess Who"], ["Crack the hidden colour peg code", "Mastermind"]], "Playing Card Games": [["Get closest to 21 without busting", "Blackjack"], ["Royal flush beats every hand", "Poker"], ["Two hole cards, five community cards, all in", "Texas Hold'em"], ["Solo game: build piles from ace to king", "Solitaire"], ["Avoid points; queen of spades is worth 13", "Hearts"], ["Partners bid contracts, one hand is dummy", "Bridge"], ["Finnish kids' game: don't get stuck with queen of spades", "Musta Maija"], ["Finnish favourite: capture table cards, 10 of diamonds scores two", "Kasino"], ["Finnish game: build suits up and down from 7♣", "Ristiseiska"], ["Ask an opponent for a rank or draw from the pond", "Go Fish"], ["Shout when two cards in a row match", "Snap"], ["Flip top cards, higher card takes both", "War"], ["Form melds, knock when your deadwood is low", "Gin Rummy"], ["James Bond's casino game, punto banco", "Baccarat"], ["Pegging board: fifteen-two, fifteen-four", "Cribbage"], ["Uruguayan rummy game, melds of seven", "Canasta"], ["Trick game with right and left bowers", "Euchre"], ["Germany's national card game, 32 cards", "Skat"], ["Melding game: queen of spades plus jack of diamonds", "Pinochle"], ["Italian capture game named for sweeping the table", "Scopa"], ["Russian game: the last one holding cards is the fool", "Durak"], ["Bridge's ancestor: tricks and trumps, no bidding", "Whist"], ["Four of a kind? Grab cutlery from the middle", "Spoons"], ["Flip face-down cards to find matching pairs", "Memory"], ["Both players race to dump cards on centre piles at once", "Speed"]], "Famous Paintings": [["Leonardo, enigmatic smile in the Louvre", "Mona Lisa"], ["Van Gogh, swirling sky and cypress over a village", "The Starry Night"], ["Munch, agonised figure on a fjord bridge", "The Scream"], ["Leonardo, Jesus and apostles at a meal", "The Last Supper"], ["Botticelli, goddess standing on a seashell", "The Birth of Venus"], ["Dalí, melting clocks", "The Persistence of Memory"], ["Picasso, bombed Basque town", "Guernica"], ["Michelangelo, God's finger nearly touching man's", "The Creation of Adam"], ["Grant Wood, farmer with a pitchfork", "American Gothic"], ["Hokusai, huge curling sea swell with Mount Fuji", "The Great Wave"], ["Rembrandt, Amsterdam militia company in darkness", "The Night Watch"], ["Monet, 1872 harbour that named a movement", "Impression, Sunrise"], ["Klimt, gold-leaf lovers embracing", "The Kiss"], ["Hopper, lonely diner customers seen through glass", "Nighthawks"], ["Van Gogh, yellow blooms in a vase", "Sunflowers"], ["Simberg, two boys carry a hurt winged girl", "The Wounded Angel"], ["Delacroix, Marianne with tricolour on the barricade", "Liberty Leading the People"], ["Velázquez, princess with her maids of honour", "Las Meninas"], ["Warhol, 32 canvases of tomato tins", "Campbell's Soup Cans"], ["Magritte, green apple hiding a man's face", "The Son of Man"], ["Millet, peasant women picking up stray wheat", "The Gleaners"], ["Kahlo, double self-portrait with shared heart", "The Two Fridas"], ["Leonardo, woman holding a white stoat", "Lady with an Ermine"], ["Constable, horse cart crossing a Suffolk stream", "The Hay Wain"], ["Raphael, Plato and Aristotle among philosophers", "The School of Athens"]], "Art Styles & Movements": [["Monet's movement: light, loose brushstrokes, outdoor scenes", "Impressionism"], ["Picasso and Braque's fractured geometric viewpoints", "Cubism"], ["Dalí's melting clocks and dreamlike imagery", "Surrealism"], ["Warhol's soup cans and Lichtenstein's comic dots", "Pop Art"], ["Seurat's paintings made of tiny coloured dots", "Pointillism"], ["Flowing organic lines, Mucha posters, Paris Métro entrances", "Art Nouveau"], ["Geometric 1920s glamour, Chrysler Building style", "Art Deco"], ["Dramatic 1600s style of Caravaggio and Rubens", "Baroque"], ["'Rebirth' era of Leonardo and Michelangelo", "Renaissance"], ["Pollock's drips and Rothko's colour fields", "Abstract Expressionism"], ["Anti-art movement of Duchamp's urinal 'Fountain'", "Dada"], ["Less is more: bare geometric forms, 1960s", "Minimalism"], ["German design school: form follows function", "Bauhaus"], ["Pointed arches, flying buttresses, medieval cathedrals", "Gothic"], ["Emotion and sublime nature: Turner and Delacroix", "Romanticism"], ["'Wild beasts' movement of Matisse's bold colours", "Fauvism"], ["Banksy's stencils on city walls", "Street Art"], ["Ornate, pastel 18th-century French frivolity", "Rococo"], ["Italian speed-and-machines movement, 1909 manifesto", "Futurism"], ["Courbet's unidealised everyday life", "Realism"], ["Japanese woodblock prints, like Hokusai's Great Wave", "Ukiyo-e"], ["Bridget Riley's eye-tricking black-and-white patterns", "Op Art"], ["Greek and Roman revival of Jacques-Louis David", "Neoclassicism"], ["Malevich's 'Black Square' movement", "Suprematism"], ["Gold-background mosaics and icons of Constantinople", "Byzantine"]], "Designer Handbags": [["Hermès, named after actress-singer Jane", "Birkin"], ["Hermès, renamed after Monaco's princess Grace", "Kelly"], ["Louis Vuitton, barrel-shaped monogram city bag", "Speedy"], ["Louis Vuitton, roomy open-top monogram tote", "Neverfull"], ["Fendi, tucked under the arm like French bread", "Baguette"], ["Chanel, quilted flap dated February 1955", "2.55"], ["Dior, Galliano's curved horse-riding shape", "Saddle"], ["Gucci hobo named after Kennedy Onassis", "Jackie"], ["Bottega Veneta, knotted-handle intrecciato hobo", "Jodie"], ["Balenciaga studded 'motorcycle' bag of 2000s it-girls", "City"], ["Chloé 2005 it-bag with a heavy padlock", "Paddington"], ["Céline tote whose shape looks like a smiling face", "Luggage"], ["Prada saffiano tote named after Milan's shopping arcade", "Galleria"], ["Hermès flap bag with a big H clasp", "Constance"], ["Hermès crossbody with a perforated H on front", "Evelyne"], ["Chanel 2011 flap honouring Coco's lover Arthur Capel", "Boy"], ["Gucci GG bag with a tiger-head clasp", "Dionysus"], ["Saint Laurent hobo with a horn handle, Tom Ford era", "Mombasa"], ["Givenchy structured trapezoid tote by Riccardo Tisci", "Antigona"], ["Loewe geometric bag by Jonathan Anderson, folds flat", "Puzzle"], ["Jacquemus micro bag that barely fits a lipstick", "Le Chiquito"], ["Louis Vuitton dome bag named after a Paris bridge", "Alma"], ["Dior embroidered canvas shopper by Maria Grazia Chiuri", "Book Tote"], ["Fendi bag whose open flap shows its lining", "Peekaboo"], ["Louis Vuitton soft travel duffel, monogram classic", "Keepall"]], "Shoes & Sneakers": [["Carved wooden shoe, Dutch tradition", "Clog"], ["Rubber beach sandal with a toe thong", "Flip-flop"], ["Very thin high heel named after a dagger", "Stiletto"], ["Laceless slip-on with tassel or penny strap", "Loafer"], ["Lace-up with perforated wingtip decoration", "Brogue"], ["Flat slipper-like shoe inspired by dancers' pumps", "Ballet flat"], ["Rubber rain boot named after a duke", "Wellington"], ["Ankle boot with elastic side panels", "Chelsea boot"], ["Soft Native American leather slipper", "Moccasin"], ["Canvas shoe with a jute rope sole", "Espadrille"], ["German cork-footbed sandal brand, Arizona model", "Birkenstock"], ["British boot brand with yellow welt stitching", "Dr. Martens"], ["Australian sheepskin boot brand", "UGG"], ["Nike's 1982 basketball shoe, often all white", "Air Force 1"], ["Michael Jordan's first signature shoe, 1985", "Air Jordan 1"], ["Adidas tennis classic, white with green heel tab", "Stan Smith"], ["Adidas indoor football classic with gum sole", "Samba"], ["Adidas suede trainer named after a fast antelope", "Gazelle"], ["Converse canvas basketball shoe named after a salesman", "Chuck Taylor"], ["Vans skate shoe with the side 'jazz stripe'", "Old Skool"], ["Nike's 1987 runner with first visible air unit", "Air Max 1"], ["Nike's 1997 runner inspired by bullet trains", "Air Max 97"], ["Nike 1985 college basketball shoe, skate favourite", "Dunk"], ["New Balance court model revived by Aimé Leon Dore", "550"], ["Kanye West's Adidas collaboration line", "Yeezy"]], "Craft & Sewing Supplies": [["Metal cap protecting your finger while hand-stitching", "Thimble"], ["Tomato-shaped holder with a little strawberry attached", "Pincushion"], ["Small spool feeding the lower thread in a machine", "Bobbin"], ["Forked little tool for unpicking stitches", "Seam Ripper"], ["Flexible ruler draped around the waist", "Tape Measure"], ["Scissors with zigzag blades to stop fraying", "Pinking Shears"], ["Tool melting sticks into hot adhesive", "Glue Gun"], ["Pair of long sticks for making scarves from yarn", "Knitting Needles"], ["Single tool with a curved tip for granny squares", "Crochet Hook"], ["Spun fibre wound into balls or skeins", "Yarn"], ["Two rings holding fabric taut for stitching", "Embroidery Hoop"], ["Non-woven fabric made by matting wool fibres", "Felt"], ["Hidden fabric layer stiffening collars and cuffs", "Interfacing"], ["Toothed fastener with a pull tab", "Zipper"], ["Hook-and-loop fastener brand", "Velcro"], ["Shiny disc-shaped spangles sewn onto party dresses", "Sequins"], ["Rolling blade for slicing quilting fabric", "Rotary Cutter"], ["Marking tool for drawing on fabric, brushes off", "Tailor's Chalk"], ["Paper template for cutting garment pieces", "Sewing Pattern"], ["Decorative Japanese paper masking strips for journals", "Washi Tape"], ["Clasp fastener, punk earring, closes cloth diapers", "Safety Pin"], ["Machine that trims and finishes seam edges", "Overlocker"], ["Fuzzy bendable wire for kids' crafts", "Pipe Cleaner"], ["Tiny sparkly flecks that end up everywhere", "Glitter"], ["Stretchy band threaded through waistbands", "Elastic"]], "International Dishes": [["Japanese raw fish on vinegared rice", "Sushi"], ["Spanish saffron rice cooked in a wide pan", "Paella"], ["Mexican folded corn tortilla with filling", "Taco"], ["Deep-fried chickpea balls in pita", "Falafel"], ["Chickpea and tahini dip", "Hummus"], ["Japanese noodle soup in rich broth", "Ramen"], ["Hungarian paprika beef stew", "Goulash"], ["Korean fermented spicy cabbage", "Kimchi"], ["Vietnamese beef noodle soup with herbs", "Pho"], ["Bangkok's stir-fried rice noodles with peanuts", "Pad thai"], ["Greek baked aubergine, mince and béchamel", "Moussaka"], ["Cold Spanish tomato soup", "Gazpacho"], ["Turkish rotating meat stuffed in bread", "Döner kebab"], ["Indian layered spiced rice with meat", "Biryani"], ["Swiss pot of melted cheese for dipping bread", "Fondue"], ["Polish dumplings, often potato-filled", "Pierogi"], ["Italian rice slowly stirred with stock", "Risotto"], ["Austrian breaded veal cutlet", "Schnitzel"], ["Eastern European beetroot soup", "Borscht"], ["Japanese light-battered fried prawns and veg", "Tempura"], ["Chinese small dishes in bamboo steamers", "Dim sum"], ["Moroccan stew cooked in a conical clay pot", "Tagine"], ["Peruvian raw fish cured in lime juice", "Ceviche"], ["Eggs poached in spicy tomato sauce, North African", "Shakshuka"], ["Red yogurt-marinated meat from an Indian clay oven", "Tandoori chicken"]], "Types of Pasta": [["Long thin strings for bolognese", "Spaghetti"], ["Bow-tie or butterfly shape", "Farfalle"], ["Short tubes cut diagonally like quills", "Penne"], ["Flat sheets layered and baked", "Lasagne"], ["'Little ears' from Puglia", "Orecchiette"], ["Short corkscrew spirals", "Fusilli"], ["Stuffed square pillows", "Ravioli"], ["Small stuffed rings said to copy Venus's navel", "Tortellini"], ["Flat ribbons classic in Alfredo sauce", "Fettuccine"], ["Tiny rice-shaped pasta", "Orzo"], ["Large tubes stuffed and baked", "Cannelloni"], ["'Little worms', thinner than spaghetti", "Vermicelli"], ["Curved elbow tubes, with cheese", "Macaroni"], ["Wide ridged tubes cut straight", "Rigatoni"], ["Bologna's egg ribbons served with ragù", "Tagliatelle"], ["Very wide ribbons, often with boar ragù", "Pappardelle"], ["Potato dumplings with sage butter", "Gnocchi"], ["Flattened strands, 'little tongues', with clams", "Linguine"], ["Seashell-shaped pasta", "Conchiglie"], ["Thick hollow strands for amatriciana", "Bucatini"], ["Huge smooth Neapolitan tubes, 'slaps'", "Paccheri"], ["'Little thimbles', tiny tubes for soup", "Ditalini"], ["'Priest stranglers', twisted rolled pasta", "Strozzapreti"], ["Short Ligurian twists served with pesto", "Trofie"], ["Pinched stuffed pasta from Piedmont", "Agnolotti"]], "Kitchen Items": [["Wire tool for beating eggs and cream", "Whisk"], ["Flat flipping tool for pancakes", "Spatula"], ["Boils water for tea", "Kettle"], ["Italian octagonal stovetop coffee maker", "Moka pot"], ["Coffee maker with a plunger", "French press"], ["Long-handled deep spoon for serving soup", "Ladle"], ["Bowl with holes for draining pasta", "Colander"], ["Rolls dough flat", "Rolling pin"], ["Four-sided box for shredding cheese", "Grater"], ["Round-bottomed pan for stir-frying", "Wok"], ["Heavy lidded cast-iron pot, Le Creuset classic", "Dutch oven"], ["Bowl and club for crushing spices", "Mortar and pestle"], ["Finnish brand of orange-handled scissors", "Fiskars"], ["Finnish glassware brand with a red 'i' logo", "Iittala"], ["Danish brand of the 1977 tilting-lid vacuum jug", "Stelton"], ["Appliance that browns bread slices", "Toaster"], ["Japanese all-purpose knife, 'three virtues'", "Santoku"], ["Pincer tool for grabbing hot food", "Tongs"], ["Twelve-cup baking tray for cupcakes", "Muffin tin"], ["Opens wine bottles", "Corkscrew"], ["Swivel-blade tool for skinning potatoes", "Peeler"], ["Brand of the iconic tilt-head stand mixer", "KitchenAid"], ["Oil-free countertop gadget for crispy chips", "Air fryer"], ["Sealed pot cooking fast with trapped steam", "Pressure cooker"], ["Adjustable-blade slicer named like a string instrument", "Mandoline"]], "Bathroom Essentials": [["Bristled stick for cleaning teeth", "Toothbrush"], ["Minty gel squeezed from a tube onto bristles", "Toothpaste"], ["Thread for cleaning between teeth", "Dental floss"], ["Rolled tissue you need after number two", "Toilet paper"], ["Lather into hair, rinse, repeat", "Shampoo"], ["Softens hair after shampooing", "Conditioner"], ["Bar that lathers when washing hands", "Soap"], ["Fluffy cloth for drying off after a shower", "Towel"], ["Underarm product that stops odour", "Deodorant"], ["Bladed tool for shaving", "Razor"], ["Rubber cup on a stick, unclogs toilets", "Plunger"], ["Tiny stick for cleaning ears, brand name Q-tips", "Cotton swab"], ["Antiseptic rinse you gargle and spit", "Mouthwash"], ["Wall glass you check your face in", "Mirror"], ["Electric blower for wet locks after a shower", "Hair dryer"], ["Toothed tool for detangling locks", "Comb"], ["Pincer tool for plucking eyebrows", "Tweezers"], ["Lotion that hydrates dry skin", "Moisturizer"], ["Fabric hung around the tub to keep water in", "Shower curtain"], ["Soft rug you step onto after showering", "Bath mat"], ["Fizzing ball dropped into the tub", "Bath bomb"], ["Foam lathered on stubble before using a razor", "Shaving cream"], ["Clicky tool for trimming fingertips' growth", "Nail clippers"], ["Rough volcanic stone for scrubbing heels", "Pumice stone"], ["Dried gourd sponge for scrubbing skin", "Loofah"]], "Flowers & Houseplants": [["Dutch bulb behind a 17th-century mania", "Tulip"], ["Red Valentine's flower with thorns", "Rose"], ["Tall yellow bloom, seeds for snacking", "Sunflower"], ["Spiky desert plant needing barely any water", "Cactus"], ["Swiss cheese plant with split leaves", "Monstera"], ["White-hooded houseplant that droops when thirsty", "Peace lily"], ["Purple fragrant fields of Provence", "Lavender"], ["Gel-filled succulent soothing sunburn", "Aloe vera"], ["Upright sword leaves, mother-in-law's tongue", "Snake plant"], ["Finland's national flower, tiny white bells", "Lily of the valley"], ["Phalaenopsis, the supermarket moth flower", "Orchid"], ["Trendy tall tree with violin-shaped leaves", "Fiddle-leaf fig"], ["Red-leaved Christmas plant from Mexico", "Poinsettia"], ["White petals plucked: he loves me, loves me not", "Daisy"], ["Yellow weed that turns into a fluffy wish", "Dandelion"], ["Trailing heart-shaped leaves, devil's ivy", "Pothos"], ["Mophead blooms that change colour with soil pH", "Hydrangea"], ["Sacred Buddhist flower rising from mud", "Lotus"], ["Japanese sakura, pink spring petals", "Cherry blossom"], ["Carnivorous plant that snaps shut on insects", "Venus flytrap"], ["Tiny blue flower whose name begs remembrance", "Forget-me-not"], ["Ruffled flower worn in a buttonhole", "Carnation"], ["Glossy Zamioculcas, nearly unkillable", "ZZ plant"], ["Flower on Japan's imperial seal", "Chrysanthemum"], ["White alpine star from The Sound of Music", "Edelweiss"]], "Camping & Outdoor Gear": [["Fabric shelter with poles and pegs", "Tent"], ["Insulated zip-up cocoon for the night", "Sleeping bag"], ["Strap-on torch worn on your forehead", "Headlamp"], ["Red Victorinox pocket tool with a corkscrew", "Swiss Army knife"], ["Fabric bed hung between two trees", "Hammock"], ["Magnetic needle that points north", "Compass"], ["Portable burner screwed onto a gas canister", "Camp stove"], ["Insulated box kept cold with ice packs", "Cooler"], ["Pair of sticks for balance on trails", "Trekking poles"], ["Finnish wooden cup carved from birch burl", "Kuksa"], ["Foam or inflatable mat under you in the tent", "Sleeping pad"], ["Waterproof sheet tied up as a quick shelter", "Tarp"], ["Metal climbing clip with a spring gate", "Carabiner"], ["Racket-like frames for walking on deep snow", "Snowshoes"], ["Hip-belted rucksack for hiking", "Backpack"], ["Hanging light for the campsite table", "Lantern"], ["Twin lenses for birdwatching", "Binoculars"], ["Swedish spirit-burner cookset, every scout's favourite", "Trangia"], ["Waterproof shell over a sleeping bag, no tent", "Bivy sack"], ["Vacuum flask that keeps coffee hot", "Thermos"], ["Military 550 nylon cord with inner strands", "Paracord"], ["Mesh draped over a bed against bugs", "Mosquito net"], ["Ankle-high waterproof footwear for trails", "Hiking boots"], ["Metal spikes strapped to boots for ice", "Crampons"], ["Traditional Finnish belt knife", "Puukko"]], "Climbing Lingo": [["Clean first-try ascent with no prior info or beta", "Onsight"], ["First-try ascent after watching or hearing beta", "Flash"], ["Clean lead ascent after practicing the route", "Redpoint"], ["Insider info on how to climb a route", "Beta"], ["Tiny edge held with bent fingertips", "Crimp"], ["Big, deep, bucket-like handhold", "Jug"], ["Rounded hold relying on friction and an open hand", "Sloper"], ["Hold squeezed between thumb and fingers", "Pinch"], ["Managing the rope to catch a falling climber", "Belay"], ["Leaping move where all limbs leave the wall", "Dyno"], ["Hardest move or section of a route", "Crux"], ["Slang for successfully completing a route", "Send"], ["Ropeless climbing on short walls over crash pads", "Bouldering"], ["Climbing with the anchor already above you, no lead", "Top Rope"], ["Metal clip with a spring-loaded gate", "Carabiner"], ["Using the back of your foot on a hold", "Heel Hook"], ["Pressing shoe rubber onto featureless rock", "Smear"], ["Pushing down on a ledge to climb onto it", "Mantle"], ["Hold pushed outward, elbow out, thumb down", "Gaston"], ["Two carabiners joined by a sewn sling", "Quickdraw"], ["Forearms swollen and burning, can't hold on", "Pumped"], ["Big, long, dramatic lead fall", "Whipper"], ["Hold gripped palm-up from below", "Undercling"], ["Dangerously tall boulder problem", "Highball"], ["Grabbing a hold at the move's weightless peak", "Deadpoint"]], "Yoga Poses & Exercises": [["Inverted V, hips high, hands and feet down", "Downward Dog"], ["Kneeling rest, forehead down, arms forward", "Child's Pose"], ["Standing on one leg, foot on inner thigh", "Tree Pose"], ["Lunge, arms out wide, gaze over front hand", "Warrior II"], ["Belly down, chest lifted, elbows bent, hips grounded", "Cobra"], ["Standing tall, feet together, arms by your sides", "Mountain Pose"], ["Cross-legged, each foot resting on opposite thigh", "Lotus"], ["Final relaxation lying flat on back, 'corpse pose'", "Savasana"], ["Alternating spine arch and dip on all fours", "Cat-Cow"], ["On back, shoulders down, hips lifted high", "Bridge"], ["Arm balance with knees resting on upper arms", "Crow"], ["Holding a straight push-up position", "Plank"], ["Hip opener: front shin across, back leg long", "Pigeon"], ["Classic flowing sequence, Surya Namaskar in Sanskrit", "Sun Salutation"], ["Inversion balancing on the crown and forearms", "Headstand"], ["Legs wide, hand to shin, arms in vertical line", "Triangle"], ["Balancing on sit bones, legs and torso forming a V", "Boat Pose"], ["On back, holding feet, knees toward armpits", "Happy Baby"], ["Standing half-squat with arms raised overhead", "Chair Pose"], ["Kneeling backbend, hands reaching for heels", "Camel"], ["Full backbend pushing up on hands and feet", "Wheel"], ["Standing balance with arms and legs wrapped", "Eagle"], ["Inversion resting on upper back, legs straight up", "Shoulder Stand"], ["Chest up, arms straight, thighs lifted off floor", "Upward Dog"], ["Standing balance holding back foot, leaning forward", "Dancer Pose"]], "Gym Moves": [["Barbell on your back, sit down and stand", "Squat"], ["Picking a loaded barbell off the floor to hips", "Deadlift"], ["Lying flat, pushing a barbell up from chest", "Bench Press"], ["Hanging from a bar, palms away, chin over bar", "Pull-up"], ["Face down, lowering chest to floor, arms extend", "Push-up"], ["Stepping forward, dropping back knee toward floor", "Lunge"], ["Squat, kick back, push-up, jump, repeat", "Burpee"], ["Bending elbows to lift dumbbells toward shoulders", "Bicep Curl"], ["Strict standing barbell lift from shoulders to locked arms", "Overhead Press"], ["Upper back on bench, driving barbell up with glutes", "Hip Thrust"], ["Seated cable exercise drawing a wide bar to chest", "Lat Pulldown"], ["Hip hinge driving a handled iron ball to chest height", "Kettlebell Swing"], ["Seated machine pushing a weighted sled with your feet", "Leg Press"], ["Lowering body between parallel bars, then pressing back", "Dips"], ["Seated, leaning back, rotating a weight side to side", "Russian Twist"], ["Plank position, driving knees to chest rapidly", "Mountain Climber"], ["Hop spreading arms and legs, then back together", "Jumping Jack"], ["Two-part Olympic lift: bar to shoulders, then overhead", "Clean and Jerk"], ["Olympic lift: floor to overhead in one motion", "Snatch"], ["Explosive leap onto a raised platform", "Box Jump"], ["Carrying heavy dumbbells at your sides across the gym", "Farmer's Walk"], ["Rising onto tiptoes to work the lower legs", "Calf Raise"], ["Lying down, curling shoulders toward hips", "Crunch"], ["Rope cable drawn toward your nose, elbows high", "Face Pull"], ["Lying triceps extension, bar lowered to forehead", "Skull Crusher"]], "Dog Breeds": [["Spotted Croatian breed, firehouse mascot", "Dalmatian"], ["Long, short-legged 'sausage dog'", "Dachshund"], ["Black, yellow or chocolate; top guide-dog breed", "Labrador"], ["Wrinkly flat-faced Frank from Men in Black", "Pug"], ["Blue-eyed, wolf-like sled dog", "Husky"], ["Police and army dog, Rin Tin Tin's breed", "German shepherd"], ["Tiny Mexican handbag dog", "Chihuahua"], ["Curly, show-clipped, France's national dog", "Poodle"], ["Snoopy's breed", "Beagle"], ["Scooby-Doo's breed", "Great Dane"], ["Bat-eared, flat-faced small breed, very trendy", "French bulldog"], ["Queen Elizabeth II's short-legged favourites", "Corgi"], ["Alpine rescue dog with a brandy barrel", "St. Bernard"], ["Fastest dog breed, raced on tracks", "Greyhound"], ["Smartest breed, sheepdog trial champion", "Border collie"], ["Japanese fox-like breed behind the Doge meme", "Shiba Inu"], ["Black-and-tan German guard dog with Roman drover roots", "Rottweiler"], ["Sleek guard dog named after a German tax collector", "Doberman"], ["Tiny fluffy orange spitz", "Pomeranian"], ["Glamorous long-haired breed from the Kabul mountains", "Afghan hound"], ["Long-haired tricolour Swiss farm giant", "Bernese mountain dog"], ["Small energetic white terrier, Milo in The Mask", "Jack Russell"], ["Lady's breed in Lady and the Tramp", "Cocker spaniel"], ["Barkless African breed that yodels", "Basenji"], ["Hachiko's loyal Japanese breed", "Akita"]], "Cat Breeds": [["Thai breed, blue eyes, dark points, loud voice", "Siamese"], ["Long fluffy coat, very flat face", "Persian"], ["Huge shaggy American gentle giant, tufted ears", "Maine Coon"], ["Hairless, wrinkly breed from Canada", "Sphynx"], ["Leopard-spotted, bred from wild Asian leopard cats", "Bengal"], ["Big blue-eyed cat that goes limp when held", "Ragdoll"], ["Round plush grey-blue UK breed, Cheshire Cat look", "British Shorthair"], ["Ears bent forward and down; Taylor Swift owns two", "Scottish Fold"], ["Long-haired Nordic 'skogkatt' of Viking legend", "Norwegian Forest Cat"], ["Silvery grey coat, green eyes, from Arkhangelsk", "Russian Blue"], ["Ticked coat, named after Ethiopia's old name", "Abyssinian"], ["Tailless breed from an Irish Sea island", "Manx"], ["Curly coat, pixie face, huge ears, from England", "Devon Rex"], ["Loves swimming; white body, coloured head and tail", "Turkish Van"], ["Only naturally spotted domestic breed, Nile origin", "Egyptian Mau"], ["Sacred temple cat legend, white-gloved paws", "Birman"], ["Domestic cat crossed with an African serval", "Savannah"], ["Persian–Siamese cross with colour points", "Himalayan"], ["Short-haired version of the Persian", "Exotic Shorthair"], ["French blue-grey breed, legend ties it to monks", "Chartreux"], ["Short-legged 'dachshund' of cats", "Munchkin"], ["Pom-pom tail; model for the beckoning lucky cat", "Japanese Bobtail"], ["Russian forest breed with a thick triple coat", "Siberian"], ["Glossy black 'mini panther' with copper eyes", "Bombay"], ["Spotted wild look but no wild DNA", "Ocicat"]], "Rocks & Minerals": [["Black volcanic glass with razor-sharp edges", "Obsidian"], ["Purple variety of quartz", "Amethyst"], ["Hardest natural mineral, pure carbon", "Diamond"], ["Shiny mineral nicknamed fool's gold", "Pyrite"], ["Volcanic rock light enough to float", "Pumice"], ["Softest mineral, 1 on Mohs scale", "Talc"], ["Metamorphosed limestone Michelangelo carved David from", "Marble"], ["Speckled igneous rock popular for countertops", "Granite"], ["Dark volcanic rock forming the ocean floor", "Basalt"], ["Mineral name for rock salt", "Halite"], ["Pencil 'lead' is actually this", "Graphite"], ["Red gem variety of corundum", "Ruby"], ["Blue gem variety of corundum", "Sapphire"], ["Green gem variety of beryl", "Emerald"], ["Rock built from shells, key ingredient in cement", "Limestone"], ["Layered rock split into roof tiles", "Slate"], ["Most common mineral in beach sand", "Quartz"], ["Sedimentary rock Petra is carved from", "Sandstone"], ["Fossilised tree resin, Baltic gem", "Amber"], ["Banded green copper mineral", "Malachite"], ["Deep blue stone Egyptians prized, ultramarine source", "Lapis lazuli"], ["Blue-green gem of Native American jewellery", "Turquoise"], ["Mineral that peels into thin flexible sheets", "Mica"], ["Mineral that plaster and drywall are made from", "Gypsum"], ["Black fossil fuel rock burned in power plants", "Coal"]]};
+const ALL = Object.values(CATS).flat().filter(c=>QBANK[c]&&QBANK[c].length>=4);
+const COLORS = ["#ff6a4d","#ffc23d","#a6e33a","#2ad4c4","#4c9dff","#a77bff","#ff5fbf","#ff9b3d","#3ddc84","#f2ec6b","#6fe3ff","#c58bff","#ff8fa3","#b6bfe0"];
+const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+const CODE_RE = /^[A-Z]{4}$/;
+const NOT_LETTERS = /[^A-Za-z]/g;
+const MAX_PICKS = 7;
+const app = document.getElementById("app");
+
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function neighbors(i){const r=i>>2,c=i&3,o=[];if(r>0)o.push(i-4);if(r<3)o.push(i+4);if(c>0)o.push(i-1);if(c<3)o.push(i+1);return o}
+function label(i){return "ABCD"[i>>2]+((i&3)+1)}
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function tilesEach(n){return n<=2?7:n===3?4:n===4?3:n<=7?2:1}
+
+/* ---------- state ---------- */
+const PEER_PREFIX = "bought-the-floor-v1-";
+const PEER_OPTS = {debug:0};
+let me={id:null,name:""};
+let code=null, R=null, P={}, recvAt=0;
+let isHost=false, H=null, lastSeq={}, hostLoop=null;
+let peer=null, hostConn=null, retryT=null, dialT=null, dialFails=0;
+const conns=new Map();
+const ui={fatal:"",msg:"",net:false,loading:false,spinning:false,spinLit:null,spinSeen:undefined,lockQn:null,lastFx:"",myTurnQn:null,busy:false,prefill:"",fresh:false,copied:false};
+
+function lobbyIds(){return Object.keys(P).sort((a,b)=>(P[a].joinedAt||0)-(P[b].joinedAt||0))}
+function order(){return R&&R.phase!=="lobby"&&R.players&&R.players.length?R.players:lobbyIds()}
+function colorOf(uid){const i=order().indexOf(uid);return COLORS[(i<0?0:i)%COLORS.length]}
+function nameOf(uid){return (R&&R.names&&R.names[uid])||(P[uid]&&P[uid].name)||"Player"}
+function count(uid,st){st=st||R;return st&&st.tiles?st.tiles.filter(t=>t&&t.o===uid).length:0}
+function alive(st){return st.players.filter(u=>count(u,st)>0)}
+function targets(st,u){
+  const out=new Set(); if(!u||!st||!st.tiles) return out;
+  st.tiles.forEach((t,i)=>{if(t&&t.o!==u&&neighbors(i).some(j=>st.tiles[j]&&st.tiles[j].o===u)) out.add(i)});
+  return out;
+}
+
+/* ---------- sound ---------- */
+let ac;
+function beep(f=660,d=.12,v=.1,type="square"){
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();
+    o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);
+    o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d)}catch(e){}
+}
+
+/* ---------- boot ---------- */
+function deviceId(){let u=lsGet("floor-uid");if(!u){u="u"+Math.random().toString(36).slice(2,10)+Date.now().toString(36);lsSet("floor-uid",u)}return u}
+function hashCode(){const h=(location.hash||"").slice(1).toUpperCase().replace(NOT_LETTERS,"");return CODE_RE.test(h)?h:""}
+function setHash(c){try{history.replaceState(null,"",location.pathname+location.search+(c?"#"+c:""))}catch(e){}}
+function inviteLink(){return location.origin+location.pathname+location.search+"#"+code}
+function boot(){
+  me.id=deviceId(); me.name=lsGet("floor-name")||"";
+  if(typeof Peer==="undefined"){ui.fatal="The connection library didn’t load. Check your internet connection and reload the page.";render();return}
+  const fromLink=hashCode(); const last=lsGet("floor-room");
+  if(last&&(!fromLink||fromLink===last)){
+    if(lsGet("floor-host-"+last)==="1") resumeHost(last); else connectPlayer(last,false);
+    return;
+  }
+  ui.prefill=fromLink; render();
+}
+function wake(){try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{})}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&code){wake();if(!isHost&&!(hostConn&&hostConn.open))scheduleRedial(200)}});
+
+/* ---------- home ---------- */
+function genCode(){let s="";for(let i=0;i<4;i++)s+=CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)];return s}
+function myName(){const el=document.getElementById("nm");return ((el&&el.value)||lsGet("floor-name")||me.name||"").trim().slice(0,24)}
+function netError(e){
+  const t=e&&e.type;
+  if(t==="browser-incompatible") return "This browser can’t make direct connections. Try Chrome or Safari.";
+  if(t==="network"||t==="server-error"||t==="socket-error"||t==="socket-closed") return "Couldn’t reach the game server. Check your internet connection and try again.";
+  return "Something went wrong. Try again.";
+}
+
+function createRoom(){
+  if(ui.busy) return; const name=myName(); const plays=document.getElementById("plays").checked;
+  if(plays&&!name){ui.msg="Type your name first.";render();return}
+  if(name){lsSet("floor-name",name);me.name=name}
+  ui.busy=true; ui.msg="Creating room…"; render();
+  openHost({c:genCode(),saved:null,playName:plays?name:null,attempt:0});
+}
+function newHostState(c){
+  return {v:2,code:c,hostId:me.id,createdAt:Date.now(),phase:"lobby",settings:{secs:30,penalty:3,mode:"one"},lobby:{},
+    players:[],names:{},tiles:null,reserve:[],log:[],challenger:null,claim:null,winner:null,duel:null,spin:null,spinSeq:0};
+}
+function resumeHost(c){
+  let saved=null; try{saved=JSON.parse(lsGet("floor-hoststate-"+c)||"null")}catch(e){}
+  if(!saved||saved.code!==c){dropRoom(c);ui.msg="";render();return}
+  code=c; isHost=true; R=null; ui.loading=true; ui.msg="Reopening your room…"; render();
+  openHost({c,saved,playName:null,attempt:0});
+}
+function dropRoom(c){lsSet("floor-room",null);lsSet("floor-host-"+c,null);lsSet("floor-hoststate-"+c,null)}
+function openHost({c,saved,playName,attempt}){
+  const p=new Peer(PEER_PREFIX+c,PEER_OPTS); let opened=false;
+  p.on("open",()=>{
+    opened=true; peer=p; code=c; isHost=true; conns.clear(); lastSeq={};
+    lsSet("floor-room",c); lsSet("floor-host-"+c,"1"); setHash(c);
+    H=saved||newHostState(c); H.hostId=me.id;
+    if(!saved&&playName) H.lobby[me.id]={name:playName,picks:[],joinedAt:Date.now()};
+    ui.busy=false; ui.loading=false; ui.msg=""; ui.spinSeen=undefined;
+    startHostLoop(); wake(); commit();
+  });
+  p.on("connection",hostConnection);
+  p.on("error",e=>{
+    if(opened) return;
+    try{p.destroy()}catch(x){}
+    if(e.type==="unavailable-id"){
+      // after a reload the server can hold our old id for a few seconds
+      if(saved){ if(attempt<20) setTimeout(()=>{if(code===c&&isHost)openHost({c,saved,playName,attempt:attempt+1})},3000);
+        else{dropRoom(c);code=null;isHost=false;ui.loading=false;ui.msg=`Couldn’t reopen room ${c}. Start a new one.`;render()} }
+      else if(attempt<6) openHost({c:genCode(),saved,playName,attempt:attempt+1});
+      else{ui.busy=false;ui.msg="Couldn’t find a free room code. Try again.";render()}
+      return;
+    }
+    if(saved&&attempt<20){ui.msg=netError(e)+" Retrying…";render();setTimeout(()=>{if(code===c&&isHost)openHost({c,saved,playName,attempt:attempt+1})},3000);return}
+    ui.busy=false; ui.loading=false; if(!saved){code=null;isHost=false}
+    ui.msg=netError(e); render();
+  });
+  p.on("disconnected",()=>{if(peer===p&&!p.destroyed)setTimeout(()=>{try{if(!p.destroyed&&p.disconnected)p.reconnect()}catch(x){}},1500)});
+}
+
+function joinRoom(){
+  if(ui.busy) return; const name=myName();
+  const c=(document.getElementById("cd").value||"").toUpperCase().replace(NOT_LETTERS,"");
+  if(!CODE_RE.test(c)){ui.msg="Room codes are 4 letters.";render();return}
+  if(!name){ui.msg="Type your name first.";render();return}
+  lsSet("floor-name",name); me.name=name;
+  connectPlayer(c,true);
+}
+
+/* ---------- player connection ---------- */
+function connectPlayer(c,fresh){
+  code=c; isHost=false; R=null; P={}; ui.loading=true; ui.fresh=fresh; ui.spinSeen=undefined; ui.msg=""; dialFails=0;
+  lsSet("floor-room",c); setHash(c); render();
+  if(peer&&!peer.destroyed){if(peer.open)dial();return}
+  const p=new Peer(PEER_OPTS); peer=p;
+  p.on("open",()=>{if(peer===p)dial()});
+  p.on("error",e=>{
+    if(peer!==p) return;
+    if(e.type==="peer-unavailable"){
+      if(ui.fresh&&!R){leaveLocal(`No room called ${code}. Check the code on the host’s screen.`);return}
+      hostConn=null; scheduleRedial(2500); return;
+    }
+    if(!p.open&&!R&&ui.fresh){leaveLocal(netError(e));return}
+    ui.msg=netError(e)+" Retrying…"; ui.net=true; render();
+  });
+  p.on("disconnected",()=>{if(peer===p&&!p.destroyed)setTimeout(()=>{try{if(!p.destroyed&&p.disconnected)p.reconnect()}catch(x){}},1500)});
+  wake();
+}
+function dial(){
+  if(!code||isHost||!peer||!peer.open) return;
+  if(hostConn){const old=hostConn;hostConn=null;try{old.close()}catch(e){}}
+  const conn=peer.connect(PEER_PREFIX+code,{reliable:true}); hostConn=conn;
+  conn.on("open",()=>{if(hostConn!==conn)return;clearTimeout(dialT);dialFails=0;sendTo(conn,{t:"hello",uid:me.id,name:me.name||lsGet("floor-name")||"Player"})});
+  conn.on("data",m=>playerMsg(conn,m));
+  conn.on("close",()=>{if(hostConn===conn){hostConn=null;scheduleRedial(1500)}});
+  conn.on("error",()=>{});
+  clearTimeout(dialT);
+  dialT=setTimeout(()=>{if(hostConn===conn&&!conn.open){hostConn=null;try{conn.close()}catch(e){}scheduleRedial(500)}},10000);
+}
+function scheduleRedial(ms){
+  if(!code||isHost) return; clearTimeout(retryT); dialFails++;
+  if(R||!ui.fresh){ui.msg=dialFails>8?"Can’t reach the host. Make sure the host’s screen is on and the page is open.":"Reconnecting to the host…";ui.net=true;render()}
+  retryT=setTimeout(()=>{if(!code||isHost)return;if(peer&&peer.open)dial();else if(peer&&!peer.destroyed&&peer.disconnected){try{peer.reconnect()}catch(e){}}},ms);
+}
+function playerMsg(conn,m){
+  if(conn!==hostConn||!m||typeof m!=="object") return;
+  if(m.t==="state"&&m.s&&typeof m.s==="object"&&Array.isArray(m.s.players)){
+    R=m.s; P=R.lobby||{}; recvAt=Date.now(); ui.loading=false; ui.fresh=false; dialFails=0;
+    if(ui.net){ui.msg="";ui.net=false}
+    onRoomChange(); render();
+  }
+  else if(m.t==="closed") leaveLocal("The host closed the room.");
+  else if(m.t==="kicked") leaveLocal("The host removed you from the room.");
+  else if(m.t==="full") leaveLocal("That room is full. 14 players is the maximum.");
+}
+function sendTo(c,m){try{if(c&&c.open){c.send(m);return true}}catch(e){}return false}
+
+function leaveLocal(msg){
+  if(hostLoop){clearInterval(hostLoop);hostLoop=null}
+  clearTimeout(retryT); clearTimeout(dialT);
+  if(hostConn){const c=hostConn;hostConn=null;try{c.close()}catch(e){}}
+  for(const c of conns.values()){try{c.close()}catch(e){}} conns.clear();
+  if(peer){const p=peer;peer=null;try{p.destroy()}catch(e){}}
+  lsSet("floor-room",null); code=null; R=null; P={}; H=null; isHost=false;
+  ui.loading=false; ui.busy=false; ui.net=false; ui.msg=msg||""; setHash(null); render();
+}
+function leaveRoom(){
+  if(hostConn) sendTo(hostConn,{t:"leave",uid:me.id});
+  code=null; render(); setTimeout(()=>leaveLocal(""),250);
+}
+function endRoom(){
+  const c=code; for(const conn of conns.values()) sendTo(conn,{t:"closed"});
+  dropRoom(c); setTimeout(()=>leaveLocal("Room closed."),250);
+}
+
+/* ---------- player actions ---------- */
+function act(type,payload){
+  const a={seq:Date.now()+Math.random(),type,...payload};
+  if(isHost&&H){hostAct(me.id,a);return}
+  if(!sendTo(hostConn,{t:"act",uid:me.id,a})){ui.lockQn=null;ui.msg="Not connected to the host. Reconnecting…";ui.net=true;render()}
+}
+function togglePick(cat){
+  const mine=(P[me.id]&&P[me.id].picks)||[]; let next;
+  if(mine.includes(cat)) next=mine.filter(c=>c!==cat); else if(mine.length<MAX_PICKS) next=[...mine,cat]; else {ui.msg=`You can pick up to ${MAX_PICKS}. Tap one to remove it first.`;render();return}
+  if(isHost&&H){if(H.lobby[me.id]){H.lobby[me.id].picks=next;ui.msg="";commit()}return}
+  P={...P,[me.id]:{...P[me.id],picks:next}}; ui.msg=""; render();
+  sendTo(hostConn,{t:"picks",uid:me.id,picks:next});
+}
+
+/* ---------- host engine (runs only on the device that created the room) ---------- */
+function commit(){
+  if(!H) return;
+  lsSet("floor-hoststate-"+code,JSON.stringify(H));
+  R=clone(H); P=R.lobby||{}; recvAt=Date.now();
+  const msg={t:"state",s:R};
+  for(const c of conns.values()) sendTo(c,msg);
+  onRoomChange(); render();
+}
+function startHostLoop(){ if(!hostLoop) hostLoop=setInterval(hostTick,100) }
+function hostConnection(conn){
+  conn.on("open",()=>{if(H)sendTo(conn,{t:"state",s:R||clone(H)})});
+  conn.on("data",m=>{try{hostMsg(conn,m)}catch(e){}});
+  conn.on("close",()=>{if(conn.uid&&conns.get(conn.uid)===conn)conns.delete(conn.uid)});
+  conn.on("error",()=>{});
+}
+function hostMsg(conn,m){
+  if(!H||!m||typeof m!=="object") return;
+  const uid=typeof m.uid==="string"&&m.uid.length>0&&m.uid.length<=40?m.uid:null; if(!uid||uid===me.id) return;
+  if(m.t==="hello"){
+    const old=conns.get(uid); if(old&&old!==conn){try{old.close()}catch(e){}}
+    conn.uid=uid; conns.set(uid,conn);
+    const name=String(m.name||"").trim().slice(0,24)||"Player";
+    if(H.phase==="lobby"){
+      if(!H.lobby[uid]){
+        if(Object.keys(H.lobby).length>=14){sendTo(conn,{t:"full"});conns.delete(uid);return}
+        H.lobby[uid]={name,picks:[],joinedAt:Date.now()};
+      }else H.lobby[uid].name=name;
+      commit();
+    }else sendTo(conn,{t:"state",s:R});
+    return;
+  }
+  if(conn.uid!==uid) return;
+  if(m.t==="picks"){
+    if(H.phase==="lobby"&&H.lobby[uid]&&Array.isArray(m.picks)){
+      H.lobby[uid].picks=[...new Set(m.picks.filter(c=>typeof c==="string"&&ALL.includes(c)))].slice(0,MAX_PICKS); commit();
+    }
+  }else if(m.t==="act"){
+    const a=m.a; if(a&&typeof a==="object"&&typeof a.seq==="number"&&a.seq>(lastSeq[uid]||0)){lastSeq[uid]=a.seq;hostAct(uid,a)}
+  }else if(m.t==="leave"){
+    conns.delete(uid); if(H.phase==="lobby"&&H.lobby[uid]){delete H.lobby[uid];commit()}
+  }
+}
+function side(d,uid){return d.att===uid?"a":d.def===uid?"d":null}
+function hostAct(uid,a){
+  if(!H) return; const d=H.duel;
+  if(a.type==="challenge"){
+    if(H.phase==="board"&&!H.claim&&H.challenger===uid&&targets(H,uid).has(a.tile)) hostStartDuel(a.tile);
+  }else if(a.type==="answer"){
+    if(H.phase==="duel"&&d&&d.state==="live"&&side(d,uid)===d.active&&a.qn===d.qn) hostAnswer(typeof a.pick==="string"?a.pick:null);
+  }else if(a.type==="claim"){
+    if(H.claim&&H.claim.by===uid&&H.claim.options.includes(a.tile)){H.tiles[a.tile].o=uid;H.claim=null;hostFinishTurn()}
+  }
+}
+function makeQ(cat,i){
+  const list=QBANK[cat]; const [clue,ans]=list[i];
+  const others=shuffle([...new Set(list.map(x=>x[1]).filter(x=>x!==ans))]).slice(0,3);
+  return {clue,options:shuffle([ans,...others])};
+}
+function hostStart(){
+  const L=H.lobby; const ids=Object.keys(L).sort((a,b)=>(L[a].joinedAt||0)-(L[b].joinedAt||0)); const n=ids.length; if(n<2||n>14) return;
+  const k=tilesEach(n); const tiles=genBoard(ids,k); const used=new Set(); const per={};
+  ids.forEach(u=>{per[u]=[];for(const c of (L[u].picks||[])){if(per[u].length<k&&!used.has(c)&&ALL.includes(c)){per[u].push(c);used.add(c)}}});
+  const pool=shuffle(ALL.filter(c=>!used.has(c)));
+  ids.forEach(u=>{while(per[u].length<k){per[u].push(pool.pop())}});
+  tiles.forEach(t=>{if(t)t.c=per[t.o].shift()});
+  const names={}; ids.forEach(u=>names[u]=L[u].name||"Player");
+  Object.assign(H,{phase:"board",players:ids,names,tiles,reserve:pool,log:[],challenger:null,claim:null,winner:null,duel:null,spin:null});
+  commit();
+}
+function genBoard(ids,k){
+  const T=ids.length*k; let best=null,bestBad=1e9;
+  for(let t=0;t<4000&&bestBad>0;t++){
+    const start=Math.floor(Math.random()*16); const cells=new Set([start]);
+    while(cells.size<T){const fr=[...cells].flatMap(neighbors).filter(j=>!cells.has(j));cells.add(fr[Math.floor(Math.random()*fr.length)])}
+    const owners=shuffle(ids.flatMap(u=>Array(k).fill(u)));
+    const tiles=Array(16).fill(null); [...cells].forEach((i,x)=>tiles[i]={o:owners[x],c:""});
+    let bad=0; tiles.forEach((tl,i)=>{if(tl)neighbors(i).forEach(j=>{if(j>i&&tiles[j]&&tiles[j].o===tl.o)bad++})});
+    if(bad<bestBad){bestBad=bad;best=tiles}
+  }
+  return best;
+}
+function hostSpin(){
+  if(!H||H.phase!=="board"||H.claim||(H.spin&&H.spin.pendingAt)) return;
+  const al=alive(H); if(al.length<2) return;
+  H.spinSeq=(H.spinSeq||0)+1;
+  H.spin={seq:H.spinSeq,target:al[Math.floor(Math.random()*al.length)],cands:shuffle(al.slice()),pendingAt:Date.now()+3200};
+  H.challenger=null; commit();
+}
+function hostPickChallenger(uid){
+  if(!H||H.phase!=="board"||H.claim||!alive(H).includes(uid)) return;
+  H.challenger=H.challenger===uid?null:uid; if(H.spin) H.spin.pendingAt=0; commit();
+}
+function hostStartDuel(idx){
+  const att=H.challenger, def=H.tiles[idx].o, cat=H.tiles[idx].c;
+  const deck=shuffle(QBANK[cat].map((_,i)=>i)); const secs=H.settings.secs;
+  H.duel={att,def,idx,cat,deck,pos:0,qn:1,q:makeQ(cat,deck[0]),clock:{a:secs,d:secs},active:"d",state:"countdown",startedAt:Date.now(),turnAt:0,penaltyUntil:0,last:null,winner:null,doneAt:0};
+  H.phase="duel"; commit();
+}
+function settle(d,now){d.clock[d.active]=Math.max(0,d.clock[d.active]-(now-d.turnAt)/1000);d.turnAt=now}
+function advance(d){d.pos++;if(d.pos>=d.deck.length){shuffle(d.deck);d.pos=0}d.qn++;d.q=makeQ(d.cat,d.deck[d.pos])}
+function hostAnswer(pick){
+  const d=H.duel, now=Date.now(); settle(d,now);
+  if(d.clock[d.active]<=0){hostTimeout(d,now);return}
+  const ans=QBANK[d.cat][d.deck[d.pos]][1];
+  if(pick===ans){d.last={ok:true,ans,by:d.active,n:d.qn};d.active=d.active==="a"?"d":"a";advance(d)}
+  else{d.last={ok:false,ans,pick:pick||null,by:d.active,n:d.qn};d.state="penalty";d.penaltyUntil=now+H.settings.penalty*1000}
+  commit();
+}
+function hostTimeout(d,now){d.clock[d.active]=0;d.state="done";d.winner=d.active==="a"?"d":"a";d.doneAt=now;commit()}
+function hostTick(){
+  if(!H) return; const now=Date.now();
+  if(H.phase==="duel"&&H.duel){
+    const d=H.duel;
+    if(d.state==="countdown"){if(now-d.startedAt>=3000){d.state="live";d.turnAt=now;commit()}return}
+    if(d.state==="live"||d.state==="penalty"){
+      if(d.clock[d.active]-(now-d.turnAt)/1000<=0){settle(d,now);hostTimeout(d,now);return}
+      if(d.state==="penalty"&&now>=d.penaltyUntil){settle(d,now);d.state="live";advance(d);commit()}
+      return;
+    }
+    if(d.state==="done"&&now-d.doneAt>=4500) hostApplyResult();
+    return;
+  }
+  if(H.phase==="board"&&H.spin&&H.spin.pendingAt&&now>=H.spin.pendingAt){H.challenger=H.spin.target;H.spin.pendingAt=0;commit()}
+}
+function hostApplyResult(){
+  const d=H.duel; const w=d.winner==="a"?d.att:d.def, l=d.winner==="a"?d.def:d.att;
+  H.log.unshift({w,l,cat:d.cat}); if(H.log.length>40) H.log.length=40;
+  H.tiles[d.idx].c=H.reserve.shift()||ALL[Math.floor(Math.random()*ALL.length)];
+  H.duel=null; H.phase="board"; H.challenger=null;
+  if(H.settings.mode==="all"){H.tiles.forEach(t=>{if(t&&t.o===l)t.o=w})}
+  else if(d.winner==="a"){H.tiles[d.idx].o=d.att}
+  else{
+    const opts=neighbors(d.idx).filter(j=>H.tiles[j]&&H.tiles[j].o===d.att);
+    if(opts.length===1) H.tiles[opts[0]].o=d.def; else if(opts.length>1) H.claim={by:d.def,from:d.att,options:opts};
+  }
+  hostFinishTurn();
+}
+function hostFinishTurn(){
+  const owners=new Set(H.tiles.filter(Boolean).map(t=>t.o));
+  if(owners.size===1){H.phase="over";H.winner=[...owners][0];H.claim=null;H.challenger=null}
+  commit();
+}
+function hostToLobby(){Object.assign(H,{phase:"lobby",players:[],names:{},tiles:null,reserve:[],log:[],challenger:null,claim:null,winner:null,duel:null,spin:null});commit()}
+function hostSetting(k,v){H.settings[k]=v;commit()}
+function hostRemove(uid){
+  if(!H||!H.lobby[uid]) return; delete H.lobby[uid];
+  const c=conns.get(uid); if(c){sendTo(c,{t:"kicked"});conns.delete(uid)}
+  commit();
+}
+async function copyInvite(){
+  const link=inviteLink();
+  try{if(navigator.share&&matchMedia("(pointer:coarse)").matches){await navigator.share({title:"The Floor",text:`Join my game of The Floor. Room code ${code}`,url:link});return}}catch(e){if(e&&e.name==="AbortError")return}
+  try{await navigator.clipboard.writeText(link);ui.copied=true}catch(e){const el=document.getElementById("inv");if(el){el.select();ui.copied=document.execCommand&&document.execCommand("copy")}}
+  render(); setTimeout(()=>{ui.copied=false;if(R&&R.phase==="lobby")render()},2000);
+}
+
+
+/* ---------- reacting to room changes ---------- */
+function onRoomChange(){
+  if(R.spin&&R.spin.seq!==ui.spinSeen){
+    if(ui.spinSeen!==undefined&&R.spin.pendingAt) animateSpin(R.spin);
+    ui.spinSeen=R.spin.seq;
+  }else if(ui.spinSeen===undefined) ui.spinSeen=R.spin?R.spin.seq:null;
+  const d=R.duel;
+  if(d){
+    const fx=d.last?d.last.n+":"+d.last.ok:"";
+    if(fx&&fx!==ui.lastFx){ui.lastFx=fx; d.last.ok?beep(990,.08,.07,"sine"):beep(200,.18,.08)}
+    const mySide=side(d,me.id);
+    if(mySide&&d.active===mySide&&d.state==="live"&&ui.myTurnQn!==d.qn){ui.myTurnQn=d.qn;beep(760,.05,.05,"sine")}
+    if(d.state==="done"&&ui.doneBeep!==d.doneAt){ui.doneBeep=d.doneAt;beep(180,.5,.12,"sawtooth")}
+  }
+  if(R.phase==="over"&&ui.overBeep!==R.winner){ui.overBeep=R.winner;beep(660,.2);setTimeout(()=>beep(880,.2),200);setTimeout(()=>beep(1320,.5),400)}
+}
+function animateSpin(sp){
+  ui.spinning=true; let k=0,steps=18,delay=55; const c=sp.cands;
+  const step=()=>{
+    ui.spinLit=steps===0?sp.target:c[(k++)%c.length]; paintSpin();
+    if(steps===0){beep(880,.3,.1);setTimeout(()=>{ui.spinning=false;render()},700);return}
+    beep(300+steps*20,.04,.05); steps--; delay*=1.09; setTimeout(step,delay);
+  };
+  step();
+}
+function paintSpin(){
+  app.querySelectorAll(".tile[data-i]").forEach(el=>{const t=R&&R.tiles&&R.tiles[+el.dataset.i];if(!t)return;
+    el.classList.toggle("lit",t.o===ui.spinLit);el.classList.toggle("dim",t.o!==ui.spinLit)});
+}
+
+/* ---------- render ---------- */
+function header(right){return `<header class="top"><div class="brand">The Floor<span>party edition</span></div><nav class="tools">${right||""}</nav></header>`}
+
+function render(){
+  if(ui.fatal){app.innerHTML=header()+`<div class="panel fatal"><h2>Can’t start here</h2><p class="hint">${esc(ui.fatal)}</p></div>`;removeDuel();return}
+  if(!code){renderHome();removeDuel();return}
+  if(!R){app.innerHTML=header(`<span class="codechip">${esc(code)}</span><button class="btn ghost small" id="leave">Leave</button>`)+`<div class="panel fatal"><h2>${isHost?"Opening your room…":"Connecting to the room…"}</h2><p class="msg">${esc(ui.msg)}</p></div>`;bind("leave",()=>leaveLocal(""));removeDuel();return}
+  if(R.phase==="lobby"){renderLobby();removeDuel();return}
+  renderBoard();
+  if(R.phase==="duel"&&R.duel) renderDuel(); else removeDuel();
+}
+function bind(id,fn,ev="click"){const el=document.getElementById(id);if(el)el.addEventListener(ev,fn)}
+
+function renderHome(){
+  const nm=esc(lsGet("floor-name")||me.name||"");
+  app.innerHTML=header()+`
+  <section class="home">
+    <div class="panel wide">
+      <label class="field" for="nm">Your name
+        <input id="nm" maxlength="24" autocomplete="off" placeholder="What should the floor call you?" value="${nm}"></label>
+    </div>
+    <div class="panel">
+      <h2>Join a room</h2>
+      <p class="hint">Get the 4-letter code from whoever started the game.</p>
+      <input id="cd" class="codeinput" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="ABCD" aria-label="Room code" value="${esc(ui.prefill)}">
+      <button id="join" class="btn primary big" ${ui.busy?"disabled":""}>Join</button>
+    </div>
+    <div class="panel">
+      <h2>Start a room</h2>
+      <p class="hint">2 to 14 players, each on their own phone. Put this screen on a TV if you have one.</p>
+      <label class="check"><input type="checkbox" id="plays" checked> I’m playing on this device too</label>
+      <button id="create" class="btn big" ${ui.busy?"disabled":""}>Create room</button>
+    </div>
+    <div class="panel wide">
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li><b>Everyone opens this page</b> on their phone and joins with the room code.</li>
+        <li><b>Pick your favourite categories.</b> Each of your tiles on the floor gets one.</li>
+        <li><b>The randomizer picks a challenger,</b> who taps a neighbouring tile to duel its owner on that tile’s category.</li>
+        <li><b>Duel:</b> a clue appears, the player whose clock is running taps the right answer out of 4. Right answers pass the clock to the opponent, wrong ones or a pass cost 3 seconds. Whoever runs out of time loses.</li>
+        <li><b>Win tiles until you own the floor.</b></li>
+      </ol>
+    </div>
+    <p class="msg wide">${esc(ui.msg)}</p>
+  </section>`;
+  bind("join",joinRoom); bind("create",createRoom);
+  bind("cd",e=>{if(e.key==="Enter")joinRoom()},"keydown");
+  bind("nm",e=>lsSet("floor-name",e.target.value.trim()),"change");
+}
+
+function renderLobby(){
+  const ids=lobbyIds(); const n=ids.length; const k=tilesEach(Math.max(2,n));
+  const mine=(P[me.id]&&P[me.id].picks)||[];
+  const taken=new Set(ids.filter(u=>u!==me.id).flatMap(u=>(P[u].picks||[]).slice(0,k)));
+  app.innerHTML=header(`<span class="codechip">${esc(code)}</span>
+    ${isHost?`<button class="btn ghost small" id="end">Close room</button>`:`<button class="btn ghost small" id="leave">Leave</button>`}`)+`
+  <section class="lobby">
+    <div class="panel">
+      <div class="bigcode"><h3>Room code</h3><div class="c">${esc(code)}</div><p class="hint">Send friends the link, or they open this page and type the code.</p><div class="invite"><input id="inv" readonly value="${esc(inviteLink())}" aria-label="Invite link"><button class="btn small" id="copy">${ui.copied?"Copied":"Share link"}</button></div></div>
+      <h3>Players · ${n} of 14</h3>
+      <ul class="plist">${ids.map((u,i)=>`<li style="--pc:${COLORS[i%COLORS.length]}"><span class="dot"></span>
+        <span class="n">${esc(P[u].name||"Player")}${u===me.id?"<small>you</small>":""}${u===R.hostId?"<small>host</small>":""}<small>${(P[u].picks||[]).length} picks</small></span>
+        ${isHost&&u!==me.id?`<button class="btn ghost small" data-rm="${esc(u)}">Remove</button>`:"<span></span>"}</li>`).join("")||`<li><span></span><span class="hint">Nobody yet. Share the code.</span><span></span></li>`}</ul>
+      ${isHost?`
+        <div class="settings">
+          <label>Seconds each<select id="secs">${[20,30,45].map(v=>`<option value="${v}" ${v==R.settings.secs?"selected":""}>${v} s</option>`).join("")}</select></label>
+          <label>Wrong answer costs<select id="pen">${[2,3,5].map(v=>`<option value="${v}" ${v==R.settings.penalty?"selected":""}>${v} s</option>`).join("")}</select></label>
+          <label>Loser gives up<select id="mode"><option value="one" ${R.settings.mode!=="all"?"selected":""}>one tile</option><option value="all" ${R.settings.mode==="all"?"selected":""}>all tiles (show rules)</option></select></label>
+        </div>
+        <button id="start" class="btn primary big" ${n<2||n>14?"disabled":""}>Start the game</button>
+        <p class="hint">${n<2?"You need at least 2 players.":`With ${n} players everyone gets ${k} tile${k>1?"s":""}. Missing picks are filled at random.`}</p>`
+      :`<p class="hint">Waiting for the host to start. With ${n} players everyone gets ${k} tile${k>1?"s":""}.</p>`}
+      <p class="msg">${esc(ui.msg)}</p>
+    </div>
+    ${P[me.id]?`<div class="panel">
+      <h2>Your categories</h2>
+      <p class="hint">Tap up to ${MAX_PICKS} favourites in order. Your top ${k} go on the floor (first come, first served if two people pick the same one).</p>
+      ${Object.entries(CATS).map(([g,list])=>`<div class="cgroup"><h3>${esc(g)}</h3><div class="chips">${list.filter(c=>ALL.includes(c)).map(c=>{
+        const r=mine.indexOf(c);return `<button class="chip ${r>=0?"on":""} ${r<0&&taken.has(c)?"taken":""}" data-c="${esc(c)}">${r>=0?`<span class="rk">${r+1}</span>`:""}${esc(c)}</button>`}).join("")}</div></div>`).join("")}
+    </div>`:`<div class="panel"><h2>${isHost?"Host screen":"Watching"}</h2><p class="hint">${isHost?"This device runs the game. Keep this page open and the screen on until the game ends.":"The game is already set up. You’re watching from this device."}</p></div>`}
+  </section>`;
+  bind("leave",leaveRoom); bind("end",endRoom); bind("start",hostStart); bind("copy",copyInvite);
+  bind("secs",e=>hostSetting("secs",+e.target.value),"change");
+  bind("pen",e=>hostSetting("penalty",+e.target.value),"change");
+  bind("mode",e=>hostSetting("mode",e.target.value),"change");
+  app.querySelectorAll("[data-rm]").forEach(b=>b.addEventListener("click",()=>hostRemove(b.dataset.rm)));
+  app.querySelectorAll(".chip[data-c]").forEach(b=>b.addEventListener("click",()=>togglePick(b.dataset.c)));
+}
+
+function statusHTML(){
+  if(R.phase==="over") return `<span style="--pc:${colorOf(R.winner)}"><b>${esc(nameOf(R.winner))}</b> owns the floor</span>`;
+  if(ui.spinning) return `Spinning…`;
+  if(R.claim) return R.claim.by===me.id?`<span style="--pc:${colorOf(me.id)}"><b>You won!</b> Tap which of ${esc(nameOf(R.claim.from))}’s tiles you take</span>`
+    :`<span style="--pc:${colorOf(R.claim.by)}"><b>${esc(nameOf(R.claim.by))}</b> is picking a tile to take</span>`;
+  if(R.challenger) return R.challenger===me.id?`<span style="--pc:${colorOf(me.id)}"><b>You’re up!</b> Tap a flashing tile to challenge</span>`
+    :`<span style="--pc:${colorOf(R.challenger)}"><b>${esc(nameOf(R.challenger))}</b> is choosing who to challenge</span>`;
+  if(R.phase==="duel") return `Duel in progress`;
+  return isHost?`Spin the randomizer to pick the next challenger`:`Waiting for the host to spin`;
+}
+function renderBoard(){
+  const meUp=!ui.spinning&&R.phase==="board"&&!R.claim&&R.challenger===me.id;
+  const tg=meUp?targets(R,me.id):new Set(); const chal=ui.spinning?null:R.challenger;
+  const claimSet=new Set(R.claim&&R.claim.by===me.id?R.claim.options:[]);
+  const al=new Set(alive(R));
+  const ord=R.players.slice().sort((a,b)=>count(b)-count(a));
+  const tiles=R.tiles.map((t,i)=>{
+    if(!t) return `<div class="tile empty" aria-hidden="true"></div>`;
+    let cls="tile";
+    if(ui.spinning){cls+=t.o===ui.spinLit?" lit":" dim"}
+    else if(R.claim){cls+=claimSet.has(i)?" target":R.claim.options.includes(i)?"":" dim"}
+    else if(chal&&R.phase==="board"){cls+=t.o===chal?" mine":tg.has(i)?" target":targets(R,chal).has(i)?"":" dim"}
+    const click=cls.includes("target");
+    return `<button class="${cls}" data-i="${i}" style="--pc:${colorOf(t.o)}" ${click?"":`tabindex="-1"`} aria-label="${label(i)}, ${esc(nameOf(t.o))}, ${esc(t.c)}">
+      <span class="meta">${label(i)}</span><span class="who">${esc(nameOf(t.o))}</span><span class="cat">${esc(t.c)}</span></button>`;
+  }).join("");
+  app.innerHTML=header(`<span class="codechip">${esc(code)}</span>
+      ${isHost?`<button class="btn ghost small" id="end">Close room</button>`:`<button class="btn ghost small" id="leave">Leave</button>`}`)+`
+  <main class="stage">
+    <div class="boardwrap">
+      <div class="status">${statusHTML()}</div>
+      <div class="board" id="board">${tiles}</div>
+      ${R.phase==="over"
+        ?`<div class="over" style="--pc:${colorOf(R.winner)}"><div class="big">${esc(nameOf(R.winner))} wins</div><p class="hint">${R.log.length} duels played.</p>${isHost?`<button id="again" class="btn primary big">Back to the lobby</button>`:`<p class="hint">The host can start a new round.</p>`}</div>`
+        :isHost?`<div class="ctrl"><button id="spin" class="btn primary big" ${R.phase!=="board"||R.claim||ui.spinning||(R.spin&&R.spin.pendingAt)?"disabled":""}>Spin the randomizer</button>
+           <span class="hint">Or tap a name to choose the challenger yourself.</span></div>`:""}
+      <p class="msg">${esc(ui.msg)}</p>
+    </div>
+    <aside class="side">
+      <h3>Standings · tiles</h3>
+      <ol class="stand">${ord.map(u=>`<li data-p="${esc(u)}" style="--pc:${colorOf(u)}" class="${al.has(u)?"":"out"} ${R.challenger===u&&!ui.spinning?"now":""} ${isHost&&al.has(u)&&R.phase==="board"?"pickable":""}">
+        <span class="dot"></span><span class="n">${esc(nameOf(u))}${u===me.id?" (you)":""}</span><span class="c">${count(u)}</span></li>`).join("")}</ol>
+      <h3>Duel log</h3>
+      <ol class="log">${R.log.map(l=>`<li><span class="w" style="--pc:${colorOf(l.w)}">${esc(nameOf(l.w))}</span> beat ${esc(nameOf(l.l))} on <b>${esc(l.cat)}</b></li>`).join("")||"<li>No duels yet</li>"}</ol>
+    </aside>
+  </main>`;
+  bind("leave",leaveRoom); bind("end",endRoom); bind("spin",hostSpin); bind("again",hostToLobby);
+  document.getElementById("board").addEventListener("click",e=>{
+    const el=e.target.closest(".tile.target"); if(!el) return; const i=+el.dataset.i;
+    if(R.claim&&R.claim.by===me.id) act("claim",{tile:i}); else if(meUp) act("challenge",{tile:i});
+  });
+  if(isHost) app.querySelectorAll(".stand li.pickable").forEach(li=>li.addEventListener("click",()=>hostPickChallenger(li.dataset.p)));
+}
+
+/* ---------- duel ---------- */
+function removeDuel(){const d=document.getElementById("duel");if(d)d.remove();const r=document.getElementById("dres");if(r)r.remove()}
+function clockVal(s){const d=R.duel;let v=d.clock[s];if(s===d.active&&(d.state==="live"||d.state==="penalty"))v-=(Date.now()-recvAt)/1000;return Math.max(0,v)}
+function renderDuel(){
+  const d=R.duel; const mySide=side(d,me.id); const myTurn=mySide&&d.active===mySide;
+  let el=document.getElementById("duel"); if(!el){el=document.createElement("div");el.id="duel";el.className="duel";document.body.appendChild(el)}
+  const isEmoji=[...d.q.clue].length<=4;
+  let screen;
+  if(d.state==="countdown") screen=`<div class="count" id="count">3</div>`;
+  else screen=`<div class="clue ${isEmoji?"emoji":""}">${esc(d.q.clue)}</div>`;
+  let fb="",fbCls="";
+  if(d.last){const who=esc(nameOf(d.last.by==="a"?d.att:d.def));
+    if(d.last.ok){fb=`✓ ${who}: ${esc(d.last.ans)}`;fbCls="ok"}
+    else{fb=d.last.pick?`✗ ${who} picked ${esc(d.last.pick)}. It was ${esc(d.last.ans)}`:`${who} passed. It was ${esc(d.last.ans)}`;fbCls="bad"}}
+  if(d.state==="countdown") {fb=`${esc(nameOf(d.def))} answers first`;fbCls=""}
+  let answers;
+  if(myTurn&&(d.state==="live"||d.state==="penalty")){
+    const locked=d.state!=="live"||ui.lockQn===d.qn;
+    answers=`<div class="answers">${d.q.options.map(o=>`<button class="opt" data-o="${esc(o)}" ${locked?"disabled":""}>${esc(o)}</button>`).join("")}</div>
+      <div class="passrow"><button class="btn ghost" id="pass" ${locked?"disabled":""}>Pass (costs ${R.settings.penalty} s)</button></div>`;
+  }else if(mySide&&d.state==="countdown"){
+    answers=`<p class="waiting">${mySide==="d"?"You answer first. Get ready!":"Your opponent answers first. Get ready!"}</p>`;
+  }else{
+    const who=d.active==="a"?d.att:d.def;
+    answers=d.state==="done"?"":`<p class="waiting">${mySide?"Your opponent is answering…":`${esc(nameOf(who))} is answering`}</p>`;
+  }
+  el.innerHTML=`<div class="dinner">
+    <div class="dhead"><div class="eyebrow">Duel for tile ${label(d.idx)}</div><h1>${esc(d.cat)}</h1></div>
+    <div class="clocks">
+      <div class="pl ${d.active==="a"&&d.state!=="countdown"?"on":""}" style="--pc:${colorOf(d.att)}"><div class="role">Challenger</div><div class="nm">${esc(nameOf(d.att))}${mySide==="a"?" (you)":""}</div><div class="clk" data-s="a"></div></div>
+      <div class="pl ${d.active==="d"&&d.state!=="countdown"?"on":""}" style="--pc:${colorOf(d.def)}"><div class="role">Defender</div><div class="nm">${esc(nameOf(d.def))}${mySide==="d"?" (you)":""}</div><div class="clk" data-s="d"></div></div>
+    </div>
+    <div class="screen">${screen}</div>
+    <div class="feedback ${fbCls}">${fb}</div>
+    ${answers}
+  </div>`;
+  el.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{ui.lockQn=d.qn;act("answer",{qn:d.qn,pick:b.dataset.o});el.querySelectorAll(".opt,#pass").forEach(x=>x.disabled=true)}));
+  const ps=el.querySelector("#pass"); if(ps) ps.addEventListener("click",()=>{ui.lockQn=d.qn;act("answer",{qn:d.qn,pick:null});el.querySelectorAll(".opt,#pass").forEach(x=>x.disabled=true)});
+  let r=document.getElementById("dres");
+  if(d.state==="done"){
+    const w=d.winner==="a"?d.att:d.def, l=d.winner==="a"?d.def:d.att;
+    const what=R.settings.mode==="all"?`${esc(nameOf(l))} is out and ${esc(nameOf(w))} takes all their tiles.`
+      :d.winner==="a"?`${esc(nameOf(w))} takes tile ${label(d.idx)}.`:`${esc(nameOf(w))} keeps ${label(d.idx)} and takes one of ${esc(nameOf(l))}’s tiles.`;
+    if(!r){r=document.createElement("div");r.id="dres";r.className="dres";document.body.appendChild(r)}
+    r.innerHTML=`<div class="card" style="--pc:${colorOf(w)}"><p class="hint">Time ran out for ${esc(nameOf(l))}</p><div class="w">${esc(nameOf(w))} wins</div><p class="hint">${what} Back to the floor in a moment.</p></div>`;
+  }else if(r) r.remove();
+  tickClocks();
+}
+function tickClocks(){
+  if(!R||R.phase!=="duel"||!R.duel) return; const d=R.duel;
+  document.querySelectorAll("#duel .clk").forEach(c=>{const v=clockVal(c.dataset.s);c.textContent=v>=10?Math.ceil(v):v.toFixed(1);c.classList.toggle("low",v<10)});
+  const cnt=document.getElementById("count"); if(cnt&&d.state==="countdown") cnt.textContent=Math.max(1,Math.ceil(3-(Date.now()-recvAt)/1000));
+}
+setInterval(tickClocks,100);
+
+boot();
+</script>
